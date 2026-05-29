@@ -1,0 +1,54 @@
+{
+  "name": "caixinha-backend",
+  "version": "1.0.0",
+  "description": "Backend do Caixinha App - Sistema de Gerenciamento de Despesas",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write 'src/**/*.ts'",
+    "db:seed": "tsx src/database/seed.ts",
+    "auth:generate-keys": "tsx src/scripts/generateJwtKeys.ts",
+    "auth:generate-api-key": "tsx src/scripts/generateApiKey.ts",
+    "auth:generate-dummy-hash": "tsx src/scripts/generateDummyPasswordHash.ts"
+  },
+  "keywords": [
+    "caixinha",
+    "despesas",
+    "compartilhadas",
+    "república"
+  ],
+  "author": "Manus AI",
+  "license": "MIT",
+  "dependencies": {
+    "@types/cors": "^2.8.15",
+    "argon2": "^0.44.0",
+    "axios": "^1.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.1.0",
+    "jose": "^6.2.3",
+    "mongodb": "^6.3.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.20",
+    "@types/node": "^20.8.0",
+    "@types/uuid": "^9.0.2",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "@vitest/ui": "^0.34.6",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.3",
+    "tsx": "^4.7.0",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
+  }
+}
