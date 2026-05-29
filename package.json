@@ -1,0 +1,27 @@
+{
+  "name": "caixinha-app-v2",
+  "version": "1.0.0",
+  "description": "Sistema de Gerenciamento de Despesas Domésticas - Caixinha App",
+  "private": true,
+  "scripts": {
+    "install-all": "cd backend && pnpm install && cd ../frontend && pnpm install",
+    "dev": "concurrently \"cd backend && pnpm dev\" \"cd frontend && pnpm dev\"",
+    "build": "cd backend && pnpm build && cd ../frontend && pnpm build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "validate": "bash validate.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.1"
+  },
+  "keywords": [
+    "caixinha",
+    "despesas",
+    "república",
+    "gerenciamento",
+    "compartilhado"
+  ],
+  "author": "Manus AI",
+  "license": "MIT"
+}
