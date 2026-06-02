@@ -1,0 +1,35 @@
+# Dependências (Node.js)
+node_modules/
+**/node_modules/
+.pnpm-debug.log*
+package-lock.json
+
+# Variáveis de Ambiente (CRÍTICO: não subir para a AWS/GitHub)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Builds e Distribuição
+dist/
+build/
+.cache/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDEs (VS Code, JetBrains)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.docker/
+
+# Outros
+.DS_Store
