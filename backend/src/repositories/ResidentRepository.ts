@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { IRepository } from './IRepository.js';
 import { IResident } from '../models/Resident.js';
 import { DatabaseConnection } from '../config/database.js'; 
@@ -21,7 +22,7 @@ export class ResidentRepository implements IRepository<IResident> {
 
   async findById(id: string): Promise<IResident | null> {
     const collection = this.getCollection();
-    return await collection.findOne({ id } as any);
+    return await collection.findOne({ _id: new ObjectId(id) } as any);
   }
 
   async save(entity: IResident): Promise<IResident> {
@@ -32,7 +33,10 @@ export class ResidentRepository implements IRepository<IResident> {
 
   async update(id: string, entity: Partial<IResident>): Promise<IResident> {
     const collection = this.getCollection();
-    await collection.updateOne({ id } as any, { $set: { ...entity, updatedAt: new Date() } });
+    await collection.updateOne(
+      { _id: new ObjectId(id) } as any,
+      { $set: { ...entity, updatedAt: new Date() } }
+    );
     const updated = await this.findById(id);
     if (!updated) throw new Error('Erro ao atualizar morador');
     return updated;
@@ -40,7 +44,9 @@ export class ResidentRepository implements IRepository<IResident> {
 
   async delete(id: string): Promise<void> {
     const collection = this.getCollection();
-    // No contexto de repúblicas, geralmente desativamos o morador em vez de apagar o histórico
-    await collection.updateOne({ id } as any, { $set: { isActive: false, updatedAt: new Date() } });
+    await collection.updateOne(
+      { _id: new ObjectId(id) } as any,
+      { $set: { isActive: false, updatedAt: new Date() } }
+    );
   }
 }

@@ -1,11 +1,10 @@
+import { ObjectId } from 'mongodb';
+
 /**
  * Modelo de Resident (Morador)
  * 
  * Este arquivo define as interfaces e tipos para o modelo de Resident.
  * Utilizamos interfaces TypeScript para garantir type safety em toda a aplicação.
- * 
- * @author Manus AI
- * @version 1.0.0
  */
 
 /**
@@ -13,8 +12,8 @@
  * Contém todos os dados persistidos de um morador
  */
 export interface IResident {
-  /** Identificador único do morador (UUID) */
-  id: string;
+  /** id do mongo: _id*/
+  _id?: ObjectId;
   
   /** Apelido/username do morador (deve ser único) */
   nickname: string;

@@ -7,7 +7,6 @@ export class ResidentFactory {
     if (!data.fullName?.trim()) throw new Error('fullName obrigatório');
     const now = new Date();
     return {
-      id: uuidv4(),
       nickname: data.nickname.toLowerCase().trim(),
       fullName: data.fullName.trim(),
       whatsappNumber: data.whatsappNumber,
