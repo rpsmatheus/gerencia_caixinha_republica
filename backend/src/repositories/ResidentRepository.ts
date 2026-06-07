@@ -5,7 +5,7 @@ import { DatabaseConnection } from '../config/database.js';
 export class ResidentRepository implements IRepository<IResident> {
   private getCollection() {
     // Obtém a instância do banco de dados ativa
-    const db = DatabaseConnection.getDatabase();
+    const db = DatabaseConnection.getInstance().getDatabase();
     return db.collection<IResident>('residents');
   }
 
