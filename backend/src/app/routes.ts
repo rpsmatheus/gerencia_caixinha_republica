@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { residentRoutes } from '../modules/residents/residents.routes.js';
+import { categoryRoutes } from '../modules/categories/categories.routes.js'; // Adicione esse import
 
 const router = Router();
 
-// Vincula as suas rotas de moradores ao prefixo /residents
 router.use('/residents', residentRoutes);
+router.use('/categories', categoryRoutes); // Adicione essa linha
 
 export default router;

@@ -4,8 +4,6 @@
  * Define as interfaces e tipos para o modelo de Despesa.
  * As despesas podem ser regulares (da caixinha) ou extras (cobradas no próximo mês).
  * 
- * @author Manus AI
- * @version 1.0.0
  */
 
 /**
