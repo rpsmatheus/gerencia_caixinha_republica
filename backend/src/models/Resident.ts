@@ -1,0 +1,110 @@
+/**
+ * Modelo de Resident (Morador)
+ * 
+ * Este arquivo define as interfaces e tipos para o modelo de Resident.
+ * Utilizamos interfaces TypeScript para garantir type safety em toda a aplicação.
+ * 
+ * @author Manus AI
+ * @version 1.0.0
+ */
+
+/**
+ * Interface que representa um Morador no banco de dados
+ * Contém todos os dados persistidos de um morador
+ */
+export interface IResident {
+  /** Identificador único do morador (UUID) */
+  id: string;
+  
+  /** Apelido/username do morador (deve ser único) */
+  nickname: string;
+  
+  /** Nome completo do morador */
+  fullName: string;
+  
+  /** Número de WhatsApp (opcional) */
+  whatsappNumber?: string;
+  
+  /** Indica se o morador está ativo no sistema */
+  isActive: boolean;
+  
+  /** Data em que o morador entrou na república */
+  joinDate: Date;
+  
+  /** Data de criação do registro */
+  createdAt: Date;
+  
+  /** Data da última atualização */
+  updatedAt: Date;
+}
+
+/**
+ * DTO (Data Transfer Object) para criação de um novo Resident
+ * Contém apenas os dados necessários para criar um morador
+ */
+export interface ICreateResidentDTO {
+  /** Apelido/username do morador */
+  nickname: string;
+  
+  /** Nome completo do morador */
+  fullName: string;
+  
+  /** Número de WhatsApp (opcional) */
+  whatsappNumber?: string;
+}
+
+/**
+ * DTO para atualização de um Resident
+ * Todos os campos são opcionais para permitir atualizações parciais
+ */
+export interface IUpdateResidentDTO {
+  /** Novo apelido (opcional) */
+  nickname?: string;
+  
+  /** Novo nome completo (opcional) */
+  fullName?: string;
+  
+  /** Novo número de WhatsApp (opcional) */
+  whatsappNumber?: string;
+  
+  /** Novo status de atividade (opcional) */
+  isActive?: boolean;
+}
+
+/**
+ * Interface para filtros de busca de Residents
+ * Permite buscar moradores com critérios específicos
+ */
+export interface IResidentFilter {
+  /** Filtrar por status de atividade */
+  isActive?: boolean;
+  
+  /** Filtrar por data de entrada (após esta data) */
+  joinDateAfter?: Date;
+  
+  /** Filtrar por data de entrada (antes desta data) */
+  joinDateBefore?: Date;
+  
+  /** Buscar por nome ou apelido (busca parcial) */
+  search?: string;
+}
+
+/**
+ * Interface para resposta paginada de Residents
+ */
+export interface IResidentPaginatedResponse {
+  /** Lista de moradores */
+  data: IResident[];
+  
+  /** Total de registros encontrados */
+  total: number;
+  
+  /** Página atual */
+  page: number;
+  
+  /** Quantidade de registros por página */
+  limit: number;
+  
+  /** Total de páginas */
+  totalPages: number;
+}
