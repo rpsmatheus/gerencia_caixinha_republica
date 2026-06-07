@@ -4,7 +4,7 @@ import { expenseRoutes } from '../modules/expenses/expenses.routes.js';
 import { categoryRoutes } from '../modules/categories/categories.routes.js';
 import { budgetRoutes } from '../modules/budgets/budgets.routes.js';
 
-const router = Router();
+const router: Router = Router();
 
 // 📌 Residents
 router.use('/residents', residentRoutes);
