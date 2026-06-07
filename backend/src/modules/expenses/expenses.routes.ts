@@ -7,7 +7,7 @@ export const expenseRoutes = Router();
 
 /**
  * 📌 GET /api/expenses
- * Lista despesas (paginado)
+ * Lista despesas (paginado + filtros)
  */
 expenseRoutes.get(
   '/',
@@ -15,7 +15,32 @@ expenseRoutes.get(
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const { data, total } = await expenseRepo.findAll(page, limit);
+    // 🧠 FILTROS
+    const filters = {
+      category: req.query.category as any,
+      isExtra: req.query.isExtra
+        ? req.query.isExtra === 'true'
+        : undefined,
+      minAmount: req.query.minAmount
+        ? Number(req.query.minAmount)
+        : undefined,
+      maxAmount: req.query.maxAmount
+        ? Number(req.query.maxAmount)
+        : undefined,
+      search: req.query.search as string,
+      startDate: req.query.startDate
+        ? new Date(req.query.startDate as string)
+        : undefined,
+      endDate: req.query.endDate
+        ? new Date(req.query.endDate as string)
+        : undefined,
+    };
+
+    const { data, total } = await expenseRepo.findAll(
+      page,
+      limit,
+      filters
+    );
 
     res.json({
       success: true,
@@ -32,7 +57,6 @@ expenseRoutes.get(
 
 /**
  * 📌 GET /api/expenses/:id
- * Buscar despesa por ID
  */
 expenseRoutes.get(
   '/:id',
@@ -55,7 +79,6 @@ expenseRoutes.get(
 
 /**
  * 📌 POST /api/expenses
- * Criar despesa
  */
 expenseRoutes.post(
   '/',
@@ -73,7 +96,6 @@ expenseRoutes.post(
 
 /**
  * 📌 PUT /api/expenses/:id
- * Atualizar despesa
  */
 expenseRoutes.put(
   '/:id',
@@ -96,7 +118,6 @@ expenseRoutes.put(
 
 /**
  * 📌 DELETE /api/expenses/:id
- * Remover despesa
  */
 expenseRoutes.delete(
   '/:id',
