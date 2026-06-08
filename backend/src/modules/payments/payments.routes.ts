@@ -3,7 +3,7 @@ import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { PaymentFactory } from '../../factories/PaymentFactory.js';
 import { paymentRepo } from '../../app/appContext.js';
 
-export const paymentRoutes = Router();
+export const paymentRoutes: Router = Router();
 
 // GET /api/payments?month=YYYY-MM
 paymentRoutes.get('/', asyncHandler(async (req, res) => {
