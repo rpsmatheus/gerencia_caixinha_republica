@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 import { IExpense } from '../models/Expense.js';
 import { IExpenseFilter } from '../models/Expense.js';
 import { DatabaseConnection } from '../config/database.js';
@@ -8,18 +10,20 @@ export class ExpenseRepository {
     return db.collection<IExpense>('expenses');
   }
 
-  // 📌 LISTAR COM FILTROS + PAGINAÇÃO
   async findAll(
+    user: { id: string; role: string, republicId: string},
     page = 1,
     limit = 10,
     filters: IExpenseFilter = {}
   ): Promise<{ data: IExpense[]; total: number }> {
     const collection = this.getCollection();
-
     const skip = (page - 1) * limit;
 
-    // 🧠 QUERY DINÂMICA (FILTROS)
     const query: any = {};
+
+    if (user.role !== 'admin') {
+      query.republicId = user.republicId;
+    }
 
     if (filters.category) {
       query.category = filters.category;
@@ -71,10 +75,16 @@ export class ExpenseRepository {
   }
 
   // 📌 BUSCAR POR ID
-  async findById(id: string): Promise<IExpense | null> {
+  async findById(id: string, user: { id: string; role: string, republicId: string}): Promise<IExpense | null> {
     const collection = this.getCollection();
 
-    return await collection.findOne({ id } as any);
+    const query: any = { _id: new ObjectId(id) };
+
+    if (user.role !== 'admin') {
+      query.republicId = user.republicId;
+    }
+
+    return await collection.findOne(query);
   }
 
   // 📌 CRIAR
@@ -87,11 +97,22 @@ export class ExpenseRepository {
   }
 
   // 📌 ATUALIZAR
-  async update(id: string, data: Partial<IExpense>): Promise<IExpense | null> {
+  async update(
+    id: string,
+    data: Partial<IExpense>,
+    user: { id: string; role: string, republicId: string}
+  ): Promise<IExpense | null> {
+
     const collection = this.getCollection();
 
+    const query: any = { _id: new ObjectId(id) };
+
+    if (user.role !== 'admin') {
+      query.republicId = user.republicId;
+    }
+
     await collection.updateOne(
-      { id } as any,
+      query,
       {
         $set: {
           ...data,
@@ -100,13 +121,19 @@ export class ExpenseRepository {
       }
     );
 
-    return await this.findById(id);
+    return await this.findById(id, user);
   }
 
   // 📌 DELETAR
-  async delete(id: string): Promise<void> {
+  async delete(id: string, user: { id: string; role: string, republicId: string}): Promise<void> {
     const collection = this.getCollection();
 
-    await collection.deleteOne({ id } as any);
+    const query: any = { _id: new ObjectId(id) };
+
+    if (user.role !== 'admin') {
+      query.republicId = user.republicId;
+    }
+
+    await collection.deleteOne(query);
   }
 }

@@ -8,6 +8,14 @@ import { ObjectId } from 'mongodb';
  */
 
 /**
+ * Define os papéis possíveis de um usuário no sistema.
+ *
+ * - admin: pode gerenciar moradores, despesas e configurações do sistema
+ * - resident: acesso limitado, apenas visualização e ações próprias
+ */
+export type Role = 'admin' | 'resident';
+
+/**
  * Interface que representa um Morador no banco de dados
  * Contém todos os dados persistidos de um morador
  */
@@ -26,6 +34,9 @@ export interface IResident {
   
   /** Indica se o morador está ativo no sistema */
   isActive: boolean;
+
+  /** Define os papéis possíveis de um usuário no sistema */
+  role: Role;
   
   /** Data em que o morador entrou na república */
   joinDate: Date;

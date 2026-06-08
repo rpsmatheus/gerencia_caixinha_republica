@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 /**
  * Modelo de Expense (Despesa)
  * 
@@ -24,8 +26,9 @@ export enum ExpenseCategory {
  * Interface que representa uma Despesa no banco de dados
  */
 export interface IExpense {
-  /** Identificador único da despesa (UUID) */
-  id: string;
+  _id?: ObjectId;
+  userId: string;
+  republicId: string;
   
   /** Descrição da despesa */
   description: string;

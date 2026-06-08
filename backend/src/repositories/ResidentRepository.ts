@@ -14,15 +14,17 @@ export class ResidentRepository implements IRepository<IResident> {
     const collection = this.getCollection();
     const skip = (page - 1) * limit;
 
+    const filter = { isActive: true };
+
     const data = await collection.find().skip(skip).limit(limit).toArray();
-    const total = await collection.countDocuments();
+    const total = await collection.countDocuments(filter);
 
     return { data, total };
   }
 
   async findById(id: string): Promise<IResident | null> {
     const collection = this.getCollection();
-    return await collection.findOne({ _id: new ObjectId(id) } as any);
+    return await collection.findOne({ _id: new ObjectId(id),isActive: true } as any);
   }
 
   async save(entity: IResident): Promise<IResident> {
