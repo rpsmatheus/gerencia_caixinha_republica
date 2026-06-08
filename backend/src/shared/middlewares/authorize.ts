@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 
-export function authorize(...allowedRoles: string[]) {
+type Role = 'admin' | 'resident';
+
+export function authorize(...allowedRoles: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user;
+    const user = req.user as { role: Role } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: 'Não autenticado' });

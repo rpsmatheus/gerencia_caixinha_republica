@@ -71,6 +71,14 @@ expenseRoutes.get(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const filter =
+      user.role === 'admin'
+        ? {}
+        : { republicId: user.republicId };
+
+    const result = await expenseRepo.findAll(filter, page, limit);
     const expense = await expenseRepo.findById(req.params.id,user);
 
     if (!expense) {
