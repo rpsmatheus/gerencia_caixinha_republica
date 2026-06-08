@@ -1,95 +1,100 @@
 # Andamento do Projeto — Caixinha App
 
-## O que já foi implementado
+> Última atualização: Junho de 2026  
 
-### Infraestrutura e configuração
-- Repositório configurado com branches e proteção de `main`
-- Docker Compose orquestrando backend, frontend e MongoDB
-- `.env.example` com todas as variáveis necessárias
-- `run.sh` para inicialização simplificada
-- TypeScript configurado no backend com `tsconfig.json` e Vitest para testes
 
-### Backend
+---
 
-#### Conexão com banco de dados
-- `DatabaseConnection` com padrão Singleton para MongoDB
-- Suporte a conexão via variável de ambiente `MONGODB_URI`
+## Visão Geral
 
-#### Models (interfaces de domínio)
-- `IResident` com campos: nickname, fullName, whatsappNumber, isActive, joinDate, createdAt, updatedAt
-- `IExpense` com enum `ExpenseCategory` (Moradia, Alimentação, Transporte, Utilidades, Limpeza, Internet, Pets, Outros), filtros e DTOs
-- `IPayment` com residentId, month (YYYY-MM), amount, proofUrl
-- `IMonthlyBalance` com previousBalance, monthlyShare, totalDue, amountPaid, currentBalance e interfaces de relatório
-- `IBudget` com republicaId, description, amount, category, month, isApplied
+O Caixinha App é um sistema web para gestão financeira de repúblicas estudantis, desenvolvido com arquitetura REST API + SPA. O backend em Node.js + Express + TypeScript expõe uma API que persiste dados em MongoDB. O frontend em React + Vite consome essa API. Toda a infraestrutura é containerizada com Docker Compose.
 
-#### Factories
-- `ResidentFactory` — valida nickname e fullName, converte nickname para minúsculas
-- `ExpenseFactory` — valida todos os campos obrigatórios, gera UUID, define isExtra como false por padrão
-- `PaymentFactory` — valida residentId, amount e formato de month (YYYY-MM)
+O desenvolvimento segue um planejamento de 10 sprints semanais. Esta página documenta o estado atual de cada módulo.
 
-#### Repositories
-- `ResidentRepository` — CRUD com soft-delete (isActive: false)
-- `ExpenseRepository` — busca paginada com filtros dinâmicos (categoria, isExtra, valor mínimo/máximo, busca por descrição, intervalo de datas)
-- `PaymentRepository` — busca por mês e por morador+mês, soma de pagamentos
-- `MonthlyBalanceRepository` — upsert (cria ou atualiza saldo do mês por morador)
+---
 
-#### Módulos (rotas HTTP)
-- `GET/POST /api/residents` + `PUT/DELETE /api/residents/:id`
-- `GET/POST/PUT/DELETE /api/expenses` com filtros completos
-- `GET /api/categories` retorna enum de categorias disponíveis
-- `GET/POST /api/budgets`
-- `GET/POST/DELETE /api/payments` com filtro por mês e morador
-- `GET /api/monthly-balance` — calcula saldos do mês para todos os moradores ativos
-- `GET /api/monthly-balance/:residentId` — saldo individual
-- `POST /api/monthly-balance/:residentId/payment` — registra pagamento e recalcula saldo
-- `GET /api/reports/monthly` — relatório consolidado com despesas, saldos e taxa de adimplência
+## Módulos Implementados
 
-#### Utilitários
-- `asyncHandler` — captura erros em rotas async e passa para o Express
-- `calculateMonthlyShare` — divide despesas comuns entre moradores ativos
-- `calculateCurrentBalance` — calcula saldo: anterior + cota - pago
-- `toMonthKey` — formata year/month para string YYYY-MM
+### Infraestrutura e Configuração
 
-### Frontend
-- Projeto React + Vite + Tailwind CSS configurado e rodando na porta 5173
-- Estrutura de pastas criada
+Ambiente completamente containerizado com Docker Compose, orquestrando três serviços: backend (porta 3001), frontend (porta 5173) e MongoDB (porta 27017). O backend usa TypeScript com compilação via `tsc` e modo de desenvolvimento com `tsx watch`. Conexão com MongoDB implementada com o padrão Singleton, garantindo uma única instância de conexão durante o ciclo de vida da aplicação.
+
+### Módulo de Moradores — `GET/POST/PUT/DELETE /api/residents`
+
+CRUD completo de moradores. Cada morador possui nickname (único), nome completo, WhatsApp e status ativo/inativo. A exclusão é implementada como **soft delete** — o campo `isActive` é marcado como `false` em vez de remover o registro, preservando o histórico financeiro vinculado ao morador.
+
+### Módulo de Despesas — `GET/POST/PUT/DELETE /api/expenses`
+
+Registro e consulta de despesas com suporte a filtros dinâmicos via query string: categoria, flag `isExtra`, valor mínimo/máximo, busca por descrição e intervalo de datas. Despesas são classificadas como **comuns** (incluídas na divisão entre moradores) ou **extras** (individuais, não entram no cálculo da cota). Resultados paginados.
+
+Categorias disponíveis via enum `ExpenseCategory`: Moradia, Alimentação, Transporte, Utilidades, Limpeza, Internet, Pets e Outros.
+
+### Módulo de Categorias — `GET /api/categories`
+
+Endpoint que retorna as categorias de despesas disponíveis no sistema, derivadas do enum `ExpenseCategory`.
+
+### Módulo de Orçamentos — `GET/POST /api/budgets`
+
+Definição de limites de gastos por categoria e mês (`month` no formato `YYYY-MM`). Permite planejar o orçamento antes do fechamento mensal.
+
+### Módulo de Pagamentos — `GET/POST/DELETE /api/payments`
+
+Registro de pagamentos com `residentId`, `month` (formato `YYYY-MM`) e `amount`. Suporta filtragem por mês e por morador. O `PaymentRepository` expõe um método `sumByResidentAndMonth` utilizado pelo módulo de fechamento para calcular o total pago por cada morador.
+
+### Módulo de Fechamento Mensal — `/api/monthly-balance`
+
+Módulo central do sistema. Três endpoints:
+
+- `GET /api/monthly-balance?year=&month=` — calcula e persiste o saldo de todos os moradores ativos no mês. O cálculo divide o total das despesas **comuns** pelo número de moradores ativos (`monthlyShare`), soma ao saldo do mês anterior (`previousBalance`) e subtrai os pagamentos já realizados (`amountPaid`). O resultado é o `currentBalance`.
+- `GET /api/monthly-balance/:residentId?year=&month=` — retorna o saldo calculado de um morador específico.
+- `POST /api/monthly-balance/:residentId/payment` — registra um pagamento diretamente pelo fechamento e recalcula o `currentBalance` automaticamente.
+
+A fórmula de cálculo: `currentBalance = previousBalance + monthlyShare - amountPaid`
+
+### Módulo de Relatórios — `GET /api/reports/monthly`
+
+Relatório consolidado por mês contendo: total de despesas (separado em comuns e extras), despesas agrupadas por categoria, total arrecadado, total pendente, contagem de moradores adimplentes e inadimplentes, e taxa de adimplência em percentual.
 
 ---
 
 ## O que ainda falta implementar
 
-### Frontend (maior parte do trabalho restante)
-- Nenhuma tela funcional está implementada — o `main.tsx` ainda está com estrutura inicial
-- Telas a criar: Despesas, Moradores, Categorias, Orçamentos, Dashboard Mensal, Relatórios
-- Serviço de API (`api.ts`) para comunicação com o backend
-- Componentes reutilizáveis (cards, formulários, notificações, layout)
+### Interface visual (Frontend)
 
-### Backend
-- **Autenticação** (Sprint 5 do planejamento) — login/logout
-- **Controle de acesso por papel** (RBAC — Sprint 6) — roles admin e morador, middleware `requireAdmin`
-- **Módulo de Moradores completo** (Sprint 6) — categorização (Bixo, Agregado, Morador), status mensal proporcional
-- **Cálculo proporcional** — fator de permanência para moradores que ficaram parte do mês
-- **Seed de dados** — popular o banco com moradores e despesas de exemplo para testes
+Nenhuma tela funcional foi desenvolvida ainda. O `main.tsx` está com a estrutura inicial e o React Router não está configurado. As telas previstas são: dashboard mensal, despesas, moradores, orçamentos e relatórios. Esta é a maior parte do trabalho restante.
 
-### Infra / qualidade
-- Testes unitários e de integração
+### Autenticação (Sprint 5)
 
----
+Login com nickname e senha usando tokens JWT (biblioteca `jose` já está nas dependências). Inclui geração e validação de tokens, middleware `authenticateJwt` para proteção de rotas e endpoint de troca de senha.
 
-## Histórico de sprints
+### Controle de Acesso — RBAC (Sprint 6)
 
-| Sprint | Status | O que foi feito |
-|--------|--------|----------------|
-| Config + Banco | ✅ Concluído | Alejandro configurou ambiente completo; Luiz Miguel implementou MongoDB Singleton e models |
-| Sprint 1 — Despesas | ✅ Concluído | CRUD completo de despesas com filtros (PR #43, #45) |
-| Sprint 2 — Categorias e Orçamentos | ✅ Parcial | Categorias retornam enum; orçamentos têm GET e POST básicos |
-| Sprint 3 — Pagamentos | ✅ Concluído | Módulo de pagamentos completo (PR #47, #48) |
-| Sprint 3 — Fechamento Mensal pt.1 | ✅ Concluído | Cálculo de saldos mensais (PR #49) |
-| Sprint 4 — Fechamento Mensal pt.2 | ✅ Concluído | Saldo individual e pagamento via fechamento (PR #50) |
-| Sprint 4 — Relatórios | ✅ Concluído | Relatório mensal consolidado (PR #51) |
-| Sprint 5 — Autenticação | ⏳ Pendente | — |
-| Sprint 6 — Moradores e RBAC | ⏳ Pendente | — |
-| Sprints 7–9 — Frontend | ⏳ Pendente | — |
-| Sprint 10 — Testes e deploy | ⏳ Pendente | — |
+Definição de papéis `admin` e `resident` com middlewares de autorização (`requireAdmin`, `requireRole`). Rotas de escrita (POST, PUT, DELETE) serão restritas ao administrador.
+
+### Categorização de Moradores (Sprint 6)
+
+Suporte a categorias como Morador, Bixo e Agregado no model `IResident`, com possíveis diferenças de cálculo ou permissão entre elas.
+
+### Cálculo Proporcional
+
+Ajuste da cota mensal para moradores que entraram ou saíram no meio do mês, aplicando um fator proporcional ao número de dias de permanência.
+
+### Seed de dados
+
+Script `src/database/seed.ts` (referenciado no `package.json` como `pnpm db:seed`) para popular o banco com dados iniciais de teste.
 
 ---
+
+## Progresso por Sprint
+
+| Sprint | Tema | Status |
+|--------|------|--------|
+| Configuração | Ambiente, Docker, banco de dados, models | ✅ Concluído |
+| Sprint 1 | Módulo de Despesas (CRUD + filtros) | ✅ Concluído |
+| Sprint 2 | Categorias e Orçamentos | ✅ Concluído |
+| Sprint 3 | Pagamentos e Fechamento Mensal (Parte 1) | ✅ Concluído |
+| Sprint 4 | Fechamento Mensal (Parte 2) e Relatórios | ✅ Concluído |
+| Sprint 5 | Autenticação JWT | ⏳ Pendente |
+| Sprint 6 | Moradores (categorias) e RBAC | ⏳ Pendente |
+| Sprints 7–9 | Interface visual (React) | ⏳ Pendente |
+| Sprint 10 | Testes, refinamentos e entrega | ⏳ Pendente |
