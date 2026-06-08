@@ -1,19 +1,20 @@
 import { IResident, ICreateResidentDTO } from '../models/Resident.js';
 
 export class ResidentFactory {
-  static create(data: ICreateResidentDTO): IResident {
-    if (!data.nickname?.trim()) throw new Error('nickname obrigatório');
-    if (!data.fullName?.trim()) throw new Error('fullName obrigatório');
-    const now = new Date();
+  static create(data: any) {
+    if (!data.fullName) throw new Error("fullName obrigatório");
+    if (!data.nickname) throw new Error("nickname obrigatório");
+    if (!data.republicId) throw new Error("republicId obrigatório");
+
     return {
-      nickname: data.nickname.toLowerCase().trim(),
-      fullName: data.fullName.trim(),
-      whatsappNumber: data.whatsappNumber,
+      fullName: data.fullName,
+      nickname: data.nickname,
+      republicId: data.republicId,
+      role: "resident" as const,
       isActive: true,
-      role: 'resident',
-      joinDate: now,
-      createdAt: now,
-      updatedAt: now,
+      joinDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
   }
 }
