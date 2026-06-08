@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { paymentRoutes } from '../modules/payments/payments.routes.js';
 import { residentRoutes } from '../modules/residents/residents.routes.js';
 import { expenseRoutes } from '../modules/expenses/expenses.routes.js';
 import { categoryRoutes } from '../modules/categories/categories.routes.js';
@@ -17,5 +18,8 @@ router.use('/categories', categoryRoutes);
 
 // 📌 Budgets
 router.use('/budgets', budgetRoutes);
+
+// 📌 Payments
+router.use('/payments', paymentRoutes);
 
 export default router;
