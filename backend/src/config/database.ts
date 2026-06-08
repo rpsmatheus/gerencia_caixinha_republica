@@ -4,8 +4,6 @@
  * Gerencia a conexão com o banco de dados MongoDB.
  * Implementa padrão Singleton para garantir uma única conexão.
  * 
- * @author Manus AI
- * @version 1.0.0
  */
 
 import { MongoClient, Db } from 'mongodb';
@@ -22,7 +20,7 @@ export class DatabaseConnection {
   /**
    * Construtor privado para implementar Singleton
    */
-  private constructor() {}
+  private constructor() { }
 
   /**
    * Obtém instância única da classe

@@ -3,7 +3,7 @@ import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { expenseRepo } from '../../app/appContext.js';
 import { ExpenseFactory } from '../../factories/ExpenseFactory.js';
 
-export const expenseRoutes = Router();
+export const expenseRoutes: Router = Router();
 
 /**
  * 📌 GET /api/expenses

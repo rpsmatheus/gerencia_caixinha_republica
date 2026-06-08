@@ -23,7 +23,6 @@
     "compartilhadas",
     "república"
   ],
-  "author": "Manus AI",
   "license": "MIT",
   "dependencies": {
     "@types/cors": "^2.8.15",
