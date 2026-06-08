@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { IResident, ICreateResidentDTO } from '../models/Resident.js';
 
 export class ResidentFactory {
@@ -11,6 +10,7 @@ export class ResidentFactory {
       fullName: data.fullName.trim(),
       whatsappNumber: data.whatsappNumber,
       isActive: true,
+      role: 'resident',
       joinDate: now,
       createdAt: now,
       updatedAt: now,

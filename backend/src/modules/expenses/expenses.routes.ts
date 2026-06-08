@@ -3,6 +3,9 @@ import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { expenseRepo } from '../../app/appContext.js';
 import { ExpenseFactory } from '../../factories/ExpenseFactory.js';
 
+import { authMiddleware } from '../../shared/middlewares/authMiddleware.js';
+import { authorize } from '../../shared/middlewares/authorize.js';
+
 export const expenseRoutes: Router = Router();
 
 /**
@@ -11,7 +14,10 @@ export const expenseRoutes: Router = Router();
  */
 expenseRoutes.get(
   '/',
+  authMiddleware,
+  authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
+    const user = req.user!;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
@@ -37,6 +43,7 @@ expenseRoutes.get(
     };
 
     const { data, total } = await expenseRepo.findAll(
+      user,
       page,
       limit,
       filters
@@ -60,8 +67,11 @@ expenseRoutes.get(
  */
 expenseRoutes.get(
   '/:id',
+  authMiddleware,
+  authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
-    const expense = await expenseRepo.findById(req.params.id);
+    const user = req.user!;
+    const expense = await expenseRepo.findById(req.params.id,user);
 
     if (!expense) {
       return res.status(404).json({
@@ -82,8 +92,11 @@ expenseRoutes.get(
  */
 expenseRoutes.post(
   '/',
+  authMiddleware,
+  authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
-    const expense = ExpenseFactory.create(req.body);
+    const user = req.user!;
+    const expense = ExpenseFactory.create(req.body,user);
 
     const saved = await expenseRepo.save(expense);
 
@@ -99,8 +112,11 @@ expenseRoutes.post(
  */
 expenseRoutes.put(
   '/:id',
+  authMiddleware,
+  authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
-    const updated = await expenseRepo.update(req.params.id, req.body);
+    const user = req.user!;
+    const updated = await expenseRepo.update(req.params.id, req.body,user);
 
     if (!updated) {
       return res.status(404).json({
@@ -121,8 +137,11 @@ expenseRoutes.put(
  */
 expenseRoutes.delete(
   '/:id',
+  authMiddleware,
+  authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
-    await expenseRepo.delete(req.params.id);
+    const user = req.user!;
+    await expenseRepo.delete(req.params.id,user);
 
     res.json({
       success: true,
