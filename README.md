@@ -1,85 +1,237 @@
-# Caixinha App - Sistema de Gestão Financeira para Repúblicas
+# Caixinha App
 
-O **Caixinha App** é uma solução web robusta e moderna projetada especificamente para automatizar, centralizar e simplificar a gestão financeira e a convivência de moradores em repúblicas estudantis e moradias compartilhadas.
-
----
-
-## 📋 Sumário
-- [Descrição Geral](#-descrição-geral)
-- [O Problema e Alinhamento com os ODS](#-o-problema-e-alinhamento-com-os-ods)
-- [Público-Alvo](#-público-alvo)
-- [Tecnologias Previstas](#-tecnologias-previstas)
-- [Equipe e Integrantes](#-equipe-e-integrantes)
+Sistema web para gestão financeira de repúblicas estudantis. Automatiza a divisão de despesas mensais, controle de pagamentos e fechamento da caixinha.
 
 ---
 
-## 🔍 Descrição Geral
+## Sumário
 
-Nas repúblicas estudantis, a divisão de despesas mensais (a famosa "caixinha") costuma ser um processo manual, descentralizado e altamente suscetível a erros. O **Caixinha App** surge para eliminar planilhas confusas e mensagens perdidas em aplicativos de conversa. 
-
-O sistema oferece um controle completo do fluxo de caixa residencial através de:
-* **Gerenciamento Dinâmico de Moradores:** Cadastro categorizado (ex: Moradores, Agregados, "Bixos") com controle de status ativo/inativo para os cálculos do mês.
-* **Fluxo de Despesas Inteligente:** Registro detalhado de gastos, separando despesas comuns (divididas igualmente) de despesas extras (individuais) com suporte a upload de comprovantes.
-* **Inteligência de Fechamento Mensal:** Lógica automatizada para cálculo de saldos, considerando o tempo de permanência de cada morador no mês (fator proporcional) e histórico de saldos anteriores.
-* **Previsibilidade Financeira:** Criação e simulação de orçamentos mensais para evitar surpresas no fim do mês.
-* **Dashboards e Análises Visuais:** Gráficos interativos para monitoramento de adimplência, gastos por categoria e saúde financeira da casa.
-
----
-
-## 🎯 O Problema e Alinhamento com os ODS
-
-### O Problema
-A gestão de uma moradia compartilhada envolve conciliar diferentes realidades financeiras, rotinas e consumos. Os principais desafios enfrentados por esse cenário incluem:
-1. **Falta de transparência:** Dificuldade em auditar para onde o dinheiro da casa está indo.
-2. **Inadimplência e desorganização:** Esquecimento de prazos e perda de comprovantes de pagamento.
-3. **Injustiça nos cálculos:** Complexidade para recalcular as contas manualmente quando um morador passa apenas metade do mês na residência.
-
-### Relação com os Objetivos de Desenvolvimento Sustentável (ODS)
-O Caixinha App está diretamente alinhado com a Agenda 2030 da Organização das Nações Unidas (ONU), impactando as seguintes metas:
-
-* **ODS 12: Consumo e Produção Responsáveis**
-  * *Meta:* Promover a gestão sustentável e o uso eficiente dos recursos naturais e compartilhados.
-  * *Relação:* Ao categorizar detalhadamente os gastos com água, energia, alimentação e manutenção, o sistema conscientiza os moradores sobre seus padrões de consumo. O monitoramento visual inibe o desperdício de recursos escassos dentro da microrregião da moradia estudantil, incentivando hábitos mais sustentáveis e coletivos.
-* **ODS 8: Trabalho Decente e Crescimento Econômico**
-  * *Meta:* Promover a educação financeira, inclusão e ambientes organizados.
-  * *Relação:* O aplicativo atua como uma ferramenta pedagógica de governança e saúde financeira para jovens universitários em transição para a vida adulta. A automação reduz o estresse gerencial e fomenta competências de planejamento econômico e adimplência.
+- [Descrição](#descrição)
+- [Tecnologias](#tecnologias)
+- [Pré-requisitos](#pré-requisitos)
+- [Como subir o projeto](#como-subir-o-projeto)
+- [Comandos Docker](#comandos-docker)
+- [Rodar sem Docker (modo local)](#rodar-sem-docker-modo-local)
+- [Rodar os testes](#rodar-os-testes)
+- [Endpoints da API](#endpoints-da-api)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Equipe](#equipe)
 
 ---
 
-## 👥 Público-Alvo
+## Descrição
 
-O sistema foi desenhado para atender às necessidades específicas de:
-* **Repúblicas Universitárias Tradicionais:** Que possuem regras próprias de hierarquia e divisão (moradores fixos, bixos, agregados).
-* **Estudantes de Graduação e Pós-Graduação:** Jovens que necessitam de transparência e agilidade na divisão de contas devido à rotina acadêmica intensa.
-* **Moradias Compartilhadas (Co-living):** Grupos de jovens profissionais ou indivíduos que dividem despesas básicas (aluguel, internet, contas de consumo) e buscam uma plataforma neutra para evitar conflitos interpessoais.
+O Caixinha App resolve o problema de gestão manual das despesas em repúblicas. O sistema permite:
 
----
-
-## 🛠️ Tecnologias Previstas
-
-A arquitetura do projeto foi planejada utilizando TypeScript de ponta a ponta para garantir segurança em tempo de compilação, modularidade e manutenibilidade.
-
-### Frontend
-* **React (com Vite):** Biblioteca base para a construção de uma interface de usuário de alto desempenho, componentizada e reativa.
-* **TailwindCSS:** Framework utilitário de CSS para o desenvolvimento de um design responsivo, moderno e limpo.
-* **Chart.js & React-Chartjs-2:** Renderização de gráficos dinâmicos para a análise visual de despesas e saldos.
-
-### Backend
-* **Node.js + Express:** Ambiente de execução e micro-framework ágeis para a construção de uma API RESTful escalável.
-* **TypeScript:** Tipagem estática aplicada a modelos, controladores e repositórios para mitigar bugs de tipagem no ecossistema Javascript.
-
-### Banco de Dados & Infraestrutura
-* **MongoDB:** Banco de dados NoSQL baseado em documentos, ideal para a flexibilidade exigida no histórico de despesas e estruturas de relatórios.
-* **Docker & Docker Compose:** Containerização completa da aplicação, permitindo que o frontend, o backend e o banco de dados rodem de forma idêntica e isolada em qualquer ambiente de desenvolvimento ou produção.
+- Cadastrar moradores e controlar status ativo/inativo
+- Registrar despesas mensais por categoria (comuns e extras)
+- Calcular automaticamente quanto cada morador deve pagar
+- Registrar pagamentos e acompanhar adimplência
+- Gerar relatórios consolidados do mês
 
 ---
 
-## 👥 Lista dos Integrantes
+## Tecnologias
 
-O projeto é desenvolvido pela equipe de Engenharia de Software composta por:
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
+| Backend | Node.js + Express + TypeScript |
+| Banco de dados | MongoDB 7.0 |
+| Infraestrutura | Docker + Docker Compose |
+| Testes | Vitest |
 
-* ALEJANDRO MARTINS DE FREITAS
-* BIANCA BARRETO LEME
-* KARINA MIYU KINUKAWA
-* LUIZ MIGUEL WOJTYLA ABREU SIQUEIRA
-* MATHEUS RODRIGUES PEREIRA DE SOUZA
+---
+
+## Pré-requisitos
+
+- [Docker](https://docs.docker.com/get-docker/) e Docker Compose instalados
+- Para rodar localmente sem Docker: Node.js 20+ e pnpm
+
+---
+
+## Como subir o projeto
+
+**1. Clone o repositório**
+```bash
+git clone https://github.com/rpsmatheus/gerencia_caixinha_republica.git
+cd gerencia_caixinha_republica
+```
+
+**2. Configure as variáveis de ambiente**
+```bash
+cp .env.example .env
+```
+O `.env.example` já tem os valores padrão para desenvolvimento local. Não é necessário alterar nada para rodar com Docker.
+
+**3. Suba os containers**
+```bash
+docker compose up -d --build
+```
+
+**4. Verifique que está funcionando**
+```bash
+curl http://localhost:3001/api/residents
+# Esperado: {"success":true,"data":[],"total":0}
+```
+
+Acesse o frontend em: `http://localhost:5173`
+
+---
+
+## Comandos Docker
+
+```bash
+# Subir tudo (com rebuild das imagens)
+docker compose up -d --build
+
+# Subir sem rebuild (mais rápido quando não mudou código)
+docker compose up -d
+
+# Ver status dos containers
+docker compose ps
+
+# Ver logs do backend em tempo real
+docker compose logs -f backend
+
+# Ver logs do frontend
+docker compose logs -f frontend
+
+# Parar os containers (mantém os dados do banco)
+docker compose down
+
+# Parar e apagar os dados do banco (começar do zero)
+docker compose down -v
+
+# Reiniciar só o backend (útil após mudanças no código)
+docker compose restart backend
+```
+
+---
+
+## Rodar sem Docker (modo local)
+
+Útil para desenvolvimento rápido sem precisar rebuildar imagens. Você precisa ter um MongoDB rodando localmente ou usar o MongoDB do Docker enquanto roda o backend fora.
+
+**Subir só o MongoDB via Docker:**
+```bash
+docker compose up -d mongodb
+```
+
+**Instalar dependências e rodar o backend:**
+```bash
+cd backend
+pnpm install
+pnpm dev
+```
+
+**Em outro terminal, rodar o frontend:**
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+O backend sobe em `http://localhost:3001` e o frontend em `http://localhost:5173`.
+
+---
+
+## Rodar os testes
+
+Os testes ficam em `backend/tests/` e usam o Vitest. Não precisam de banco de dados — os repositories são mockados.
+
+```bash
+cd backend
+
+# Instalar dependências (se ainda não instalou)
+pnpm install
+
+# Rodar todos os testes
+pnpm test
+
+# Rodar em modo watch (re-executa ao salvar arquivos)
+pnpm test --watch
+
+# Rodar com cobertura de código
+pnpm test:coverage
+
+# Rodar só um arquivo de teste específico
+pnpm test tests/factories/ExpenseFactory.test.ts
+```
+
+---
+
+## Endpoints da API
+
+Base URL: `http://localhost:3001/api`
+
+### Moradores
+```
+GET    /residents              Lista moradores (paginado)
+POST   /residents              Cria morador
+PUT    /residents/:id          Atualiza morador
+DELETE /residents/:id          Desativa morador (soft-delete)
+```
+
+### Despesas
+```
+GET    /expenses               Lista com filtros: ?category=&isExtra=&search=&startDate=&endDate=
+GET    /expenses/:id           Busca por ID
+POST   /expenses               Cria despesa
+PUT    /expenses/:id           Atualiza despesa
+DELETE /expenses/:id           Remove despesa
+```
+
+### Categorias
+```
+GET    /categories             Lista categorias disponíveis
+```
+
+### Orçamentos
+```
+GET    /budgets/:republicaId/:year/:month    Orçamento do mês
+POST   /budgets                              Cria orçamento
+```
+
+### Pagamentos
+```
+GET    /payments?month=YYYY-MM              Lista pagamentos do mês
+GET    /payments?month=YYYY-MM&residentId=  Pagamentos de um morador
+POST   /payments                            Registra pagamento
+DELETE /payments/:id                        Remove pagamento
+```
+
+### Fechamento Mensal
+```
+GET    /monthly-balance?year=&month=              Saldos de todos os moradores
+GET    /monthly-balance/:residentId?year=&month=  Saldo individual
+POST   /monthly-balance/:residentId/payment       Registra pagamento e recalcula
+```
+
+### Relatórios
+```
+GET    /reports/monthly?year=&month=    Relatório consolidado do mês
+```
+
+---
+
+## Variáveis de ambiente
+
+O arquivo `.env.example` documenta todas as variáveis necessárias:
+
+| Variável | Descrição | Padrão (dev) |
+|----------|-----------|--------------|
+| `MONGODB_URI` | String de conexão com o MongoDB | `mongodb://admin:password@mongodb:27017/caixinha?authSource=admin` |
+| `PORT` | Porta do backend | `3001` |
+
+---
+
+## Equipe
+
+Projeto desenvolvido na disciplina de Engenharia de Software:
+
+- Alejandro Martins de Freitas
+- Bianca Barreto Leme
+- Karina Miyu Kinukawa
+- Luiz Miguel Wojtyla Abreu Siqueira
+- Matheus Rodrigues Pereira de Souza
