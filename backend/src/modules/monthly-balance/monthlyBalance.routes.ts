@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { PaymentFactory } from '../../factories/PaymentFactory.js';
 import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { monthlyBalanceRepo, expenseRepo, residentRepo, paymentRepo } from '../../app/appContext.js';
 import { calculateMonthlyShare, calculateCurrentBalance, toMonthKey } from './monthlyBalance.utils.js';
@@ -75,4 +76,62 @@ monthlyBalanceRoutes.get('/', asyncHandler(async (req, res) => {
             balances,
         },
     });
+}));
+
+/**
+ * GET /api/monthly-balance/:residentId?year=2026&month=6
+ * Retorna o saldo de UM morador específico no mês.
+ */
+monthlyBalanceRoutes.get('/:residentId', asyncHandler(async (req, res) => {
+    const year = parseInt(req.query.year as string);
+    const month = parseInt(req.query.month as string);
+    const { residentId } = req.params;
+
+    if (!year || !month) {
+        return res.status(400).json({ error: 'year e month obrigatórios' });
+    }
+
+    const balance = await monthlyBalanceRepo.findByResidentAndMonth(residentId, year, month);
+    if (!balance) {
+        return res.status(404).json({ error: 'Saldo não encontrado para este morador/mês' });
+    }
+    res.json({ success: true, data: balance });
+}));
+
+/**
+ * POST /api/monthly-balance/:residentId/payment
+ * Registra um pagamento diretamente pelo fechamento e recalcula o saldo.
+ * Corpo: { year, month, amount, proofUrl? }
+ */
+monthlyBalanceRoutes.post('/:residentId/payment', asyncHandler(async (req, res) => {
+    const { residentId } = req.params;
+    const { year, month, amount, proofUrl } = req.body;
+
+    if (!year || !month || !amount || amount <= 0) {
+        return res.status(400).json({ error: 'year, month e amount obrigatórios' });
+    }
+
+    const monthKey = toMonthKey(year, month);
+
+    // Criar o pagamento
+    const payment = PaymentFactory.create({ residentId, month: monthKey, amount, proofUrl });
+    await paymentRepo.save(payment);
+
+    // Buscar saldo atual e recalcular
+    const current = await monthlyBalanceRepo.findByResidentAndMonth(residentId, year, month);
+    const newAmountPaid = (current?.amountPaid ?? 0) + amount;
+    const newCurrentBalance = (current?.totalDue ?? 0) - newAmountPaid;
+
+    const updated = await monthlyBalanceRepo.upsert({
+        residentId, year, month,
+        previousBalance: current?.previousBalance ?? 0,
+        monthlyShare: current?.monthlyShare ?? 0,
+        totalDue: current?.totalDue ?? 0,
+        amountPaid: newAmountPaid,
+        currentBalance: newCurrentBalance,
+        paymentProofUrl: proofUrl,
+        paymentDate: new Date(),
+    });
+
+    res.status(201).json({ success: true, data: { payment, balance: updated } });
 }));
