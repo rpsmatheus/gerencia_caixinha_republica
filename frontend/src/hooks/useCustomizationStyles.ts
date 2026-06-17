@@ -1,12 +1,4 @@
-/**
- * Hook para aplicar estilos dinâmicos baseado em customização
- * 
- * Fornece funções para gerar classes Tailwind e estilos inline
- * baseado nas configurações de customização
- * 
- * @author Manus AI
- * @version 1.0.0
- */
+
 
 import { useCustomization } from '../contexts/CustomizationContext';
 

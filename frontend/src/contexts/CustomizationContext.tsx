@@ -1,12 +1,4 @@
-/**
- * Contexto de Customização Global
- * 
- * Fornece acesso às configurações de customização em toda a aplicação
- * Permite que qualquer componente acesse e aplique estilos customizados
- * 
- * @author Manus AI
- * @version 1.0.0
- */
+
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
@@ -118,7 +110,7 @@ export function useCustomization() {
  */
 function applyCustomizationStyles(settings: CustomizationSettings) {
   const root = document.documentElement;
-  
+
   // Aplicar cores
   root.style.setProperty('--color-primary', settings.colors.primary);
   root.style.setProperty('--color-secondary', settings.colors.secondary);
