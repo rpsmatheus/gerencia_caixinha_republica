@@ -3,8 +3,8 @@ import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { expenseRepo, monthlyBalanceRepo, residentRepo } from '../../app/appContext.js';
 import { toMonthKey } from '../monthly-balance/monthlyBalance.utils.js';
 
-export const reportRoutes = Router();
-
+export const reportRoutes: Router = Router();
+const SYSTEM_USER = { id: 'system', role: 'admin', republicId: '' };
 /**
  * GET /api/reports/monthly?year=2026&month=6
  * Relatório consolidado do mês: despesas + saldos de moradores.
@@ -21,12 +21,12 @@ reportRoutes.get('/monthly', asyncHandler(async (req, res) => {
 
     // Buscar dados em paralelo
     const [expenseResult, balances, residentsResult] = await Promise.all([
-        expenseRepo.findAll(1, 10000, {
+        expenseRepo.findAll(SYSTEM_USER, 1, 10000, {
             startDate: new Date(`${monthKey}-01`),
             endDate: new Date(`${monthKey}-31`),
         }),
         monthlyBalanceRepo.findByMonth(year, month),
-        residentRepo.findAll(1, 1000),
+        residentRepo.findAll(SYSTEM_USER, 1, 1000),
     ]);
 
     const expenses = expenseResult.data;
