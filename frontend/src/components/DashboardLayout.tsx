@@ -1,8 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import CustomizationPanel from './CustomizationPanel';
-import { useCustomization } from '../contexts/CustomizationContext';
 import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardLayoutProps {
@@ -11,11 +9,10 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [customizationOpen, setCustomizationOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const location = useLocation();
   const navigate = useNavigate();
-  const { updateSettings } = useCustomization();
+
   const { resident, logout } = useAuth();
 
   // Detectar mudanças de tamanho de tela
@@ -40,7 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Função para deslogar do sistema
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/'); f
   };
 
   const isAdmin = resident?.role === 'admin';
@@ -76,7 +73,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-sm">
                 C
               </div>
-              {(sidebarOpen || !isMobile) && <h1 className="text-lg font-bold hidden md:block">Caixinha</h1>}
+              {sidebarOpen && <h1 className="text-lg font-bold">Caixinha</h1>}
             </div>
             {isMobile && (
               <button
@@ -162,13 +159,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   {sidebarOpen ? '✕' : '☰'}
                 </button>
               )}
-              <button
-                onClick={() => setCustomizationOpen(true)}
-                className="p-2 rounded-lg transition-colors text-lg flex-shrink-0 text-gray-600 hover:bg-gray-100"
-                title="Customização"
-              >
-                ⚙️
-              </button>
             </div>
           </div>
         </header>
@@ -177,13 +167,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex-1 overflow-auto p-4 md:p-8 bg-gray-100 text-gray-900">
           {children}
         </div>
-        {/* Customization Panel */}
-        <CustomizationPanel
-          isOpen={customizationOpen}
-          onClose={() => setCustomizationOpen(false)}
-          onSettingsChange={updateSettings}
-          darkMode={false}
-        />
+
       </main>
     </div>
   );
