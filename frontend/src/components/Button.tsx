@@ -1,12 +1,3 @@
-/**
- * Componente Button Padronizado
- * 
- * Botões com design moderno e consistente para todo o sistema.
- * Suporta múltiplos estilos: primary, secondary, danger, success, ghost, icon.
- * 
- * @author Manus AI
- * @version 2.5.0
- */
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'icon';
