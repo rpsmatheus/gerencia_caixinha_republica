@@ -78,8 +78,8 @@ expenseRoutes.get(
         ? {}
         : { republicId: user.republicId };
 
-    const result = await expenseRepo.findAll(filter, page, limit);
-    const expense = await expenseRepo.findById(req.params.id,user);
+    const result = await expenseRepo.findAll(user, page, limit);
+    const expense = await expenseRepo.findById(req.params.id, user);
 
     if (!expense) {
       return res.status(404).json({
@@ -104,7 +104,7 @@ expenseRoutes.post(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    const expense = ExpenseFactory.create(req.body,user);
+    const expense = ExpenseFactory.create(req.body, user);
 
     const saved = await expenseRepo.save(expense);
 
@@ -124,7 +124,7 @@ expenseRoutes.put(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    const updated = await expenseRepo.update(req.params.id, req.body,user);
+    const updated = await expenseRepo.update(req.params.id, req.body, user);
 
     if (!updated) {
       return res.status(404).json({
@@ -149,7 +149,7 @@ expenseRoutes.delete(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    await expenseRepo.delete(req.params.id,user);
+    await expenseRepo.delete(req.params.id, user);
 
     res.json({
       success: true,
