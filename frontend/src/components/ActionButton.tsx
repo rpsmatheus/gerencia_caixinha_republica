@@ -1,18 +1,4 @@
-/**
- * Componente Global de Botão de Ação
- * 
- * Botões reutilizáveis com estilos consistentes
- * Suporta ícones com ou sem texto
- * 
- * @author Manus AI
- * @version 2.0.0
- */
 
-/**
- * Componente de Input de Valor com Enfeite
- * 
- * Input que mostra "0.00" como placeholder e some ao digitar
- */
 export function ValueInput({
   value,
   onChange,

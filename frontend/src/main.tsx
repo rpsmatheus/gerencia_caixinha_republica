@@ -1,8 +1,20 @@
+/**
+ * Ponto de entrada do React
+ * 
+ * Renderiza o componente App no DOM.
+ * 
+ * @author Manus AI
+ * @version 1.0.0
+ */
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './styles/index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <h1>Caixinha Frontend Initialized</h1>
+    <App />
   </React.StrictMode>,
 )
+

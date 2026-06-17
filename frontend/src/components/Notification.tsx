@@ -1,11 +1,3 @@
-/**
- * Componente Global de Notificações
- * 
- * Notificações leves que desaparecem automaticamente
- * 
- * @author Manus AI
- * @version 1.0.0
- */
 
 import { useEffect } from 'react';
 

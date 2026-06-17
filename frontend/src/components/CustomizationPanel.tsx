@@ -1,12 +1,4 @@
-/**
- * Painel de Customização Visual
- * 
- * Permite customizar cores, textos e estilos da aplicação
- * Todas as mudanças são salvas em localStorage
- * 
- * @author Manus AI
- * @version 2.3.0
- */
+
 
 import { useState, useEffect } from 'react';
 
@@ -163,11 +155,10 @@ export default function CustomizationPanel({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 font-semibold transition-colors ${
-                activeTab === tab
+              className={`flex-1 py-3 font-semibold transition-colors ${activeTab === tab
                   ? `border-b-2 border-blue-600 ${textClass}`
                   : `${textClass} opacity-60 ${hoverClass}`
-              }`}
+                }`}
             >
               {tab === 'colors' && 'Cores'}
               {tab === 'texts' && 'Textos'}
@@ -182,7 +173,7 @@ export default function CustomizationPanel({
           {activeTab === 'colors' && (
             <div className="space-y-4">
               <h3 className={`text-lg font-semibold ${textClass}`}>Cores Principais</h3>
-              
+
               {[
                 { key: 'primary', label: 'Cor Primária' },
                 { key: 'secondary', label: 'Cor Secundária' },
@@ -207,7 +198,7 @@ export default function CustomizationPanel({
               ))}
 
               <h3 className={`text-lg font-semibold ${textClass} mt-6`}>Cores de Categorias</h3>
-              
+
               {[
                 { key: 'bixo', label: 'Bixo' },
                 { key: 'agregado', label: 'Agregado' },
@@ -233,7 +224,7 @@ export default function CustomizationPanel({
               ))}
 
               <h3 className={`text-lg font-semibold ${textClass} mt-6`}>Cores de Status</h3>
-              
+
               {[
                 { key: 'success', label: 'Sucesso' },
                 { key: 'error', label: 'Erro' },
@@ -264,7 +255,7 @@ export default function CustomizationPanel({
           {activeTab === 'texts' && (
             <div className="space-y-4">
               <h3 className={`text-lg font-semibold ${textClass}`}>Nomes das Páginas</h3>
-              
+
               {[
                 { key: 'appTitle', label: 'Título da App' },
                 { key: 'monthlyDashboard', label: 'Caixinha Mensal' },

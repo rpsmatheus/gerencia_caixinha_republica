@@ -1,11 +1,4 @@
-/**
- * Ponto de entrada do React
- * 
- * Renderiza o componente App no DOM.
- * 
- * @author Manus AI
- * @version 1.0.0
- */
+
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'

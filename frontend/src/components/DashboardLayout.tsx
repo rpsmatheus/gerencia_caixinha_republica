@@ -1,9 +1,3 @@
-/**
- * DashboardLayout
- * * Layout com sidebar para o dashboard.
- * * @author Manus AI
- * @version 2.3.0
- */
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -103,8 +97,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               to={item.path}
               onClick={() => isMobile && setSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg transition-all duration-200 text-sm md:text-base ${isActive(item.path)
-                  ? 'bg-indigo-600 text-white font-semibold shadow-md'
-                  : 'text-slate-300 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white font-semibold shadow-md'
+                : 'text-slate-300 hover:bg-slate-700'
                 }`}
               title={item.label}
             >
