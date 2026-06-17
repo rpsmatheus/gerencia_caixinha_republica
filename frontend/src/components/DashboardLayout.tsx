@@ -37,7 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Função para deslogar do sistema
   const handleLogout = () => {
     logout();
-    navigate('/'); f
+    navigate('/');
   };
 
   const isAdmin = resident?.role === 'admin';

@@ -4,8 +4,8 @@ import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { monthlyBalanceRepo, expenseRepo, residentRepo, paymentRepo } from '../../app/appContext.js';
 import { calculateMonthlyShare, calculateCurrentBalance, toMonthKey } from './monthlyBalance.utils.js';
 
-export const monthlyBalanceRoutes = Router();
-
+export const monthlyBalanceRoutes: Router = Router();
+const SYSTEM_USER = { id: 'system', role: 'admin', republicId: '' };
 /**
  * GET /api/monthly-balance?year=2026&month=6
  * Retorna o saldo calculado de TODOS os moradores ativos no mês.
@@ -23,8 +23,8 @@ monthlyBalanceRoutes.get('/', asyncHandler(async (req, res) => {
 
     // Buscar dados necessários em paralelo
     const [residentsResult, expenses] = await Promise.all([
-        residentRepo.findAll(1, 1000),
-        expenseRepo.findAll(1, 10000, {
+        residentRepo.findAll(SYSTEM_USER, 1, 1000),
+        expenseRepo.findAll(SYSTEM_USER, 1, 10000, {
             startDate: new Date(`${monthKey}-01`),
             endDate: new Date(`${monthKey}-31`),
         }),
