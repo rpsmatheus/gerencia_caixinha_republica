@@ -1,5 +1,4 @@
-
- //Página de Despesas - Redesenhada
+//Página de Despesas - Redesenhada
  
 
 import { useState, useEffect } from 'react';
@@ -81,6 +80,9 @@ export default function Expenses() {
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // 1. Desativado temporariamente chamadas reais para evitar erro 401
+      /*
       const [expRes, catRes] = await Promise.all([
         api.get('/api/expenses?limit=1000'),
         api.get('/api/categories'),
@@ -90,7 +92,56 @@ export default function Expenses() {
       if (catRes.data.data.length > 0 && !formData.category) {
         setFormData(prev => ({ ...prev, category: catRes.data.data[0].name }));
       }
-      setError(null);
+      */
+
+      // 2. Mock de Categorias locais para teste visual
+      const mockCategories = [
+        { id: 'c1', name: 'Aluguel' },
+        { id: 'c2', name: 'Água / Luz' },
+        { id: 'c3', name: 'Mercado' },
+        { id: 'c4', name: 'Internet' }
+      ];
+      setCategories(mockCategories);
+      
+      if (!formData.category) {
+        setFormData(prev => ({ ...prev, category: mockCategories[0].name }));
+      }
+
+      // 3. Mock de Despesas locais para renderizar na tabela
+      setExpenses([
+        {
+          id: 'e1',
+          description: 'Aluguel da República',
+          category: 'Aluguel',
+          amount: 1500.00,
+          expenseDate: new Date().toISOString().split('T')[0],
+          isExtra: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'e2',
+          description: 'Compra do Mês',
+          category: 'Mercado',
+          amount: 450.50,
+          expenseDate: new Date().toISOString().split('T')[0],
+          isExtra: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'e3',
+          description: 'Manutenção da descarga',
+          category: 'Água / Luz',
+          amount: 80.00,
+          expenseDate: new Date().toISOString().split('T')[0],
+          isExtra: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ]);
+
+      setError('Modo de teste local ativo: Despesas simuladas.');
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar dados');
     } finally {

@@ -1,7 +1,6 @@
 /**
  * Página de Análises
- * 
- * @author Manus AI
+ * * @author Manus AI
  * @version 2.3.1
  */
 
@@ -44,15 +43,40 @@ export default function Analytics() {
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // 1. Desativado chamadas de API reais para evitar o erro 401 que desloga a sessão
+      /*
       const [year, month] = selectedMonth.split('-');
-      // Buscamos com um limite alto para garantir que todas as despesas venham para o filtro local
       const [expRes, monthRes] = await Promise.all([
         api.get('/api/expenses?limit=1000'),
         api.get(`/api/monthly-balance/${year}/${month}`),
       ]);
       setExpenses(expRes.data.data);
       setMonthlyData(monthRes?.data?.data || null);
-      setError(null);
+      */
+
+      // 2. Mock das despesas do mês corrente para gerar o gráfico de pizza de Categorias
+      const currentYearMonth = new Date().toISOString().substring(0, 7);
+      setExpenses([
+        { id: '1', description: 'Supermercado', category: 'Mercado', amount: 550.00, expenseDate: `${currentYearMonth}-05`, isExtra: false },
+        { id: '2', description: 'Internet 500 Mega', category: 'Internet', amount: 120.00, expenseDate: `${currentYearMonth}-10`, isExtra: false },
+        { id: '3', description: 'Conta de Energia', category: 'Água / Luz', amount: 310.00, expenseDate: `${currentYearMonth}-12`, isExtra: false },
+        { id: '4', description: 'Aluguel Casa', category: 'Aluguel', amount: 1600.00, expenseDate: `${currentYearMonth}-01`, isExtra: false },
+        { id: '5', description: 'Conserto Chuveiro', category: 'Água / Luz', amount: 90.00, expenseDate: `${currentYearMonth}-14`, isExtra: true }
+      ]);
+
+      // 3. Mock do balanço dos moradores para gerar as métricas e o gráfico de barras
+      setMonthlyData({
+        totalExpenses: 2670.00,
+        balances: [
+          { nickname: 'Vitor', totalPaid: 600, totalDue: 667.5, remainingBalance: 67.5 },
+          { nickname: 'Vini', totalPaid: 667.5, totalDue: 667.5, remainingBalance: 0 },
+          { nickname: 'Pedro', totalPaid: 450, totalDue: 667.5, remainingBalance: 217.5 },
+          { nickname: 'Lucas', totalPaid: 667.5, totalDue: 667.5, remainingBalance: 0 }
+        ]
+      });
+
+      setError('Modo de teste local ativo: Gráficos e métricas simulados.');
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar dados');
     } finally {
@@ -76,20 +100,17 @@ export default function Analytics() {
 
   const filteredExpenses = expenses.filter(exp => exp.expenseDate.substring(0, 7) === selectedMonth);
 
-  // Cálculos locais (Diferenciando extras)
   const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const regularExpensesTotal = filteredExpenses.filter(e => !e.isExtra).reduce((sum, exp) => sum + exp.amount, 0);
   const extraExpensesTotal = filteredExpenses.filter(e => !!e.isExtra).reduce((sum, exp) => sum + exp.amount, 0);
   const expenseCount = filteredExpenses.length;
 
-  // Dados vindos do endpoint mensal (que já aplica o offset)
   const totalCobranca = monthlyData?.totalExpenses || 0;
   const expensesByResident = monthlyData?.balances || [];
   const totalPaid = expensesByResident.reduce((sum: number, b: any) => sum + b.totalPaid, 0);
   const totalDue = expensesByResident.reduce((sum: number, b: any) => sum + b.totalDue, 0);
   const complianceRate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0;
 
-  // Despesas por categoria
   const expensesByCategory = filteredExpenses.reduce((acc: any, exp) => {
     const existing = acc.find((e: any) => e.category === exp.category);
     if (existing) {
@@ -171,7 +192,9 @@ export default function Analytics() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass}`}>
               <h2 className={`text-lg font-semibold ${textClass} mb-4`}>Despesas por Categoria (Cadastradas no Mês)</h2>
-              <Pie data={categoryChartData} options={{ responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#374151' } } } }} />
+              <div className="max-w-[320px] mx-auto">
+                <Pie data={categoryChartData} options={{ responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#374151' } } } }} />
+              </div>
             </div>
             <div className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass}`}>
               <h2 className={`text-lg font-semibold ${textClass} mb-4`}>Saldo Devedor por Morador</h2>

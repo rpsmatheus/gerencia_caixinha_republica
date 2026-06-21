@@ -67,22 +67,48 @@ export default function Residents() {
 
   // BUG FIX: Usar limit=1000 para garantir que todos os moradores sejam retornados,
   // evitando que novos moradores fiquem invisíveis por causa da paginação padrão (limit=10).
-  const loadResidents = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/api/residents', {
-        params: { limit: 1000, page: 1 },
-      });
-      // A API retorna { success, data, pagination }
-      const data = res.data?.data ?? res.data;
-      setResidents(Array.isArray(data) ? data : []);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar moradores');
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadResidents = async () => {
+  try {
+    setLoading(true);
+    
+    // 1. COMENTE a chamada real da API para evitar o erro 401 que te expulsa:
+    /*
+    const res = await api.get('/api/residents', {
+      params: { limit: 1000, page: 1 },
+    });
+    const data = res.data?.data ?? res.data;
+    setResidents(Array.isArray(data) ? data : []);
+    */
+
+    // 2. ADICIONE dados mocados locais apenas para ver o layout funcionando:
+    setResidents([
+      {
+        id: '1',
+        fullName: 'Morador 1',
+        nickname: 'Moradores1',
+        phone: '31999999999',
+        category: 'Morador',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        fullName: 'João Silva',
+        nickname: 'Bixo João',
+        phone: null,
+        category: 'Bixo',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ]);
+
+    setError('Modo de teste local ativo: API real comentada.');
+  } catch (err: any) {
+    setError(err.message || 'Erro ao carregar moradores');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
