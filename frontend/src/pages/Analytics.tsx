@@ -1,8 +1,3 @@
-/**
- * Página de Análises
- * * @author Manus AI
- * @version 2.3.1
- */
 
 import api from '../services/api';
 import { useState, useEffect } from 'react';
