@@ -23,7 +23,7 @@ export class ResidentRepository implements IRepository<IResident> {
     };
 
     const data = await collection
-      .find(query)
+      .find(query, { projection: { passwordHash: 0 } })
       .skip(skip)
       .limit(limit)
       .toArray();
@@ -36,16 +36,27 @@ export class ResidentRepository implements IRepository<IResident> {
   async findById(id: string): Promise<IResident | null> {
     const collection = this.getCollection();
 
+    return await collection.findOne(
+      { _id: new ObjectId(id), isActive: true } as any,
+      { projection: { passwordHash: 0 } }
+    );
+  }
+
+  /** Busca por nickname incluindo o passwordHash — uso exclusivo do login */
+  async findByNicknameWithPassword(nickname: string): Promise<IResident | null> {
+    const collection = this.getCollection();
+
     return await collection.findOne({
-      _id: new ObjectId(id),
-      isActive: true
+      nickname: nickname.toLowerCase(),
+      isActive: true,
     } as any);
   }
 
   async save(entity: IResident): Promise<IResident> {
     const collection = this.getCollection();
     await collection.insertOne(entity as any);
-    return entity;
+    const { passwordHash, ...safeEntity } = entity as any;
+    return safeEntity as IResident;
   }
 
   async update(id: string, entity: Partial<IResident>): Promise<IResident> {

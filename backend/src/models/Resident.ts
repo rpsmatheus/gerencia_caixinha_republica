@@ -16,6 +16,11 @@ import { ObjectId } from 'mongodb';
 export type Role = 'admin' | 'resident';
 
 /**
+ * Categoria do morador dentro da república
+ */
+export type ResidentCategory = 'Bixo' | 'Agregado' | 'Morador';
+
+/**
  * Interface que representa um Morador no banco de dados
  * Contém todos os dados persistidos de um morador
  */
@@ -31,13 +36,25 @@ export interface IResident {
   
   /** Número de WhatsApp (opcional) */
   whatsappNumber?: string;
-  
+
+  /** Categoria do morador na república */
+  category: ResidentCategory;
+
   /** Indica se o morador está ativo no sistema */
   isActive: boolean;
 
   /** Define os papéis possíveis de um usuário no sistema */
   role: Role;
-  
+
+  /** Hash argon2 da senha do morador */
+  passwordHash: string;
+
+  /** Se true, o morador é obrigado a trocar a senha no próximo login */
+  mustChangePassword: boolean;
+
+  /** Identifica a república à qual o morador pertence (multi-tenancy) */
+  republicId: string;
+
   /** Data em que o morador entrou na república */
   joinDate: Date;
   
@@ -55,12 +72,21 @@ export interface IResident {
 export interface ICreateResidentDTO {
   /** Apelido/username do morador */
   nickname: string;
-  
+
   /** Nome completo do morador */
   fullName: string;
-  
+
   /** Número de WhatsApp (opcional) */
   whatsappNumber?: string;
+
+  /** Categoria do morador na república (padrão: Bixo) */
+  category?: ResidentCategory;
+
+  /** Senha inicial em texto puro (será convertida em passwordHash). Se omitida, uma senha temporária é gerada. */
+  password?: string;
+
+  /** Identifica a república à qual o morador pertence */
+  republicId: string;
 }
 
 /**
@@ -76,7 +102,10 @@ export interface IUpdateResidentDTO {
   
   /** Novo número de WhatsApp (opcional) */
   whatsappNumber?: string;
-  
+
+  /** Nova categoria (opcional) */
+  category?: ResidentCategory;
+
   /** Novo status de atividade (opcional) */
   isActive?: boolean;
 }

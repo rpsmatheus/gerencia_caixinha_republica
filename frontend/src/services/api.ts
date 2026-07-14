@@ -75,6 +75,15 @@ export async function apiLogin(
   return res.data.data;
 }
 
+export async function apiRegister(
+  nickname: string,
+  fullName: string,
+  password: string
+): Promise<{ accessToken: string; resident: AuthResident }> {
+  const res = await api.post('/api/auth/register', { nickname, fullName, password });
+  return res.data.data;
+}
+
 export async function apiLogout(): Promise<void> {
   await api.post('/api/auth/logout');
 }

@@ -30,6 +30,8 @@ services:
       PORT: 3001
       MONGODB_URI: mongodb://admin:password@mongodb:27017/caixinha?authSource=admin
       CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: 5a6f75e814f88a4dd03f9be26c5f6171a27ea187d86a727e695d1f8b3078623a
+      JWT_EXPIRES_IN: 8h
     ports:
       - "3001:3001"
     depends_on:

@@ -8,11 +8,18 @@ import { useAuth } from './contexts/AuthContext';
 
 export default function Landing() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ identifier: '', password: '' });
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [formData, setFormData] = useState({ identifier: '', password: '', nickname: '', fullName: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, mustChangePassword } = useAuth();
+  const { login, register, mustChangePassword } = useAuth();
+
+  const openModal = (initialMode: 'login' | 'register') => {
+    setMode(initialMode);
+    setError('');
+    setIsModalOpen(true);
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +27,11 @@ export default function Landing() {
     setLoading(true);
 
     try {
-      await login(formData.identifier, formData.password);
+      if (mode === 'register') {
+        await register(formData.nickname, formData.fullName, formData.password);
+      } else {
+        await login(formData.identifier, formData.password);
+      }
       // Redirecionamento gerenciado pelo App.tsx via mustChangePassword
       if (mustChangePassword) {
         navigate('/change-password', { replace: true });
@@ -28,7 +39,7 @@ export default function Landing() {
         navigate('/monthly', { replace: true });
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? 'Credenciais inválidas.';
+      const msg = err?.response?.data?.error ?? (mode === 'register' ? 'Não foi possível criar a conta.' : 'Credenciais inválidas.');
       setError(msg);
     } finally {
       setLoading(false);
@@ -47,13 +58,13 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => openModal('login')}
               className="px-4 sm:px-6 py-2.5 text-slate-600 font-bold hover:text-indigo-600 transition-colors"
             >
               Entrar
             </button>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => openModal('register')}
               className="px-4 sm:px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95"
             >
               Registrar
@@ -93,13 +104,13 @@ export default function Landing() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => openModal('register')}
                   className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 active:scale-95 flex items-center justify-center gap-2 text-lg"
                 >
                   Criar Caixinha Grátis
                 </button>
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => openModal('login')}
                   className="px-8 py-4 bg-white text-slate-700 font-bold rounded-xl border-2 border-slate-200 hover:border-indigo-600 hover:text-indigo-600 transition-all flex items-center justify-center gap-2 text-lg"
                 >
                   Acessar Conta
@@ -249,7 +260,7 @@ export default function Landing() {
             <p className="text-indigo-100 text-lg mb-10 max-w-2xl mx-auto relative z-10">Junte-se a dezenas de casas de estudantes que pararam de brigar por causa de dinheiro e começaram a usar o Caixinha App.</p>
 
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => openModal('register')}
               className="relative z-10 px-10 py-5 bg-indigo-500 text-white text-xl font-black rounded-2xl hover:bg-indigo-400 hover:scale-105 transition-all shadow-xl"
             >
               Começar Agora
@@ -284,33 +295,68 @@ export default function Landing() {
           {/* Caixa do Modal */}
           <div className="relative z-10 bg-white w-full max-w-md rounded-[2.5rem] p-8 sm:p-10 shadow-2xl focus:outline-none" tabIndex={-1}>
             <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 sm:top-8 sm:right-8 text-slate-400 hover:text-slate-600 transition-colors text-2xl p-2 hover:bg-slate-100 rounded-full">✕</button>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Bem-vindo!</h2>
-            <p className="text-slate-500 mb-8 font-medium">Entre para gerenciar sua república.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">
+              {mode === 'register' ? 'Crie sua república' : 'Bem-vindo de volta!'}
+            </h2>
+            <p className="text-slate-500 mb-8 font-medium">
+              {mode === 'register'
+                ? 'Você será o administrador desta república.'
+                : 'Entre para gerenciar sua república.'}
+            </p>
             <form onSubmit={handleAuth} className="space-y-4">
+
+              {mode === 'register' && (
+                <input
+                  type="text"
+                  required
+                  placeholder="Seu nome completo"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium text-base text-slate-900"
+                  value={formData.fullName}
+                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                  autoComplete="name"
+                />
+              )}
 
               <input
                 type="text"
                 required
-                placeholder="Apelido ou telefone"
+                placeholder={mode === 'register' ? 'Escolha um apelido' : 'Apelido'}
                 className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium text-base text-slate-900"
-                value={formData.identifier}
-                onChange={e => setFormData({ ...formData, identifier: e.target.value })}
+                value={mode === 'register' ? formData.nickname : formData.identifier}
+                onChange={e =>
+                  setFormData(
+                    mode === 'register'
+                      ? { ...formData, nickname: e.target.value }
+                      : { ...formData, identifier: e.target.value }
+                  )
+                }
                 autoComplete="username"
               />
 
               <input
                 type="password"
                 required
+                minLength={mode === 'register' ? 6 : undefined}
                 placeholder="Senha"
                 className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium text-base text-slate-900"
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
-                autoComplete="current-password"
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               />
 
               {error && <p className="text-red-500 text-sm font-bold bg-red-50 p-3 rounded-xl">{error}</p>}
               <button type="submit" disabled={loading} className="w-full py-4 bg-indigo-600 text-white text-lg font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-200 disabled:opacity-50 mt-2 transition-all active:scale-[0.98]">
-                {loading ? 'Entrando...' : 'Entrar no Sistema'}
+                {loading
+                  ? (mode === 'register' ? 'Criando...' : 'Entrando...')
+                  : (mode === 'register' ? 'Criar Conta' : 'Entrar no Sistema')}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); setError(''); }}
+                className="w-full text-center text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors pt-1"
+              >
+                {mode === 'register' ? 'Já tem conta? Entrar' : 'Ainda não tem conta? Criar república'}
               </button>
             </form>
           </div>

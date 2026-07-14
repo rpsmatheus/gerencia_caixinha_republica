@@ -13,12 +13,14 @@ import MonthlyResponsibles from './pages/MonthlyResponsibles';
 
 // Rota privada: verifica token real + redireciona para troca de senha se necessário
 function PrivateRoute({ children }: { children: JSX.Element }) {
-  const { isAuthenticated, mustChangePassword } = useAuth();
+  const { isAuthenticated, mustChangePassword, isLoading } = useAuth();
 
-  // Compatibilidade legada: aceita token antigo enquanto migramos
-  const hasLegacyToken = !!localStorage.getItem('token');
+  // Aguarda a restauração da sessão a partir do token salvo antes de decidir
+  if (isLoading) {
+    return null;
+  }
 
-  if (!isAuthenticated && !hasLegacyToken) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
