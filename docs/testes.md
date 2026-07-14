@@ -52,13 +52,47 @@ pnpm test:coverage     # roda com relatório de cobertura (texto + html + lcov)
 
 ---
 
+## Fase 2 — Backend: testes de integração de rotas ✅
+
+### Estratégia de mock
+
+As rotas nunca recebem os repositories por injeção de dependência — cada módulo importa a classe diretamente (`new ResidentRepository()`) ou usa a instância singleton exportada por `app/appContext.ts`. Os testes de integração mockam a **classe** do repository com `vi.mock(...)`, usando `vi.hoisted()` para compartilhar o mesmo objeto mock entre todas as instanciações (`new XRepository()` sempre retorna a mesma referência). Isso funciona igual nos dois padrões de uso do projeto, sem precisar alterar o código de produção.
+
+Para rotas protegidas, `authMiddleware` também é mockado: em vez de verificar um JWT real e consultar o Mongo, o middleware de teste lê um header `x-test-user` (JSON com `id`/`role`/`republicId`) e popula `req.user` diretamente. O middleware `authorize` (RBAC) **não é mockado** — roda de verdade, então os testes continuam cobrindo os casos de 403 por papel incorreto. A revalidação de token/usuário em si já está coberta pelos testes unitários de `jwt.ts` (Fase 1); repetir isso em cada rota seria redundante.
+
+`ExpenseFactory`, `PaymentFactory` e o cálculo de `monthlyBalance.utils` rodam **de verdade** dentro das rotas (não são mockados) — o Vitest resolve o módulo real, então a integração também serve como teste de regressão da lógica de negócio já coberta na Fase 1.
+
+### O que foi coberto
+
+| Arquivo de teste | Módulo | Destaques |
+|---|---|---|
+| `tests/modules/auth.routes.test.ts` | `auth` | registro (senha curta, nickname duplicado), login (senha errada com argon2 real, usuário inexistente), `/me` e `/change-password` autenticados via `DatabaseConnection` mockada |
+| `tests/modules/residents.routes.test.ts` | `residents` | RBAC (`POST` só admin), um morador só edita a si mesmo, admin pode mudar categoria e outros não, conflito de nickname (409) |
+| `tests/modules/expenses.routes.test.ts` | `expenses` | paginação, filtros repassados ao repository, 404 em `GET`/`PUT` por id, **erro de validação da factory não vira 400** (ver "Gaps encontrados" abaixo) |
+| `tests/modules/payments.routes.test.ts` | `payments` | sem autenticação (rota pública — ver gaps), filtro por `residentId`, validação de `month` |
+| `tests/modules/categories.routes.test.ts` | `categories` | RBAC, nome duplicado (409, case-insensitive na regra real) |
+| `tests/modules/reports.routes.test.ts` | `reports` | agregação de despesas por categoria, taxa de adimplência, caso sem moradores ativos |
+| `tests/modules/monthlyBalance.routes.test.ts` | `monthly-balance` | divisão igualitária, **redistribuição da cota de quem está inativo no mês**, saldo anterior + pagamentos no cálculo do saldo restante, status/proporcional/pagamento |
+| `tests/modules/budgets.routes.test.ts` | `budgets` | modelos (templates), simulação idempotente por descrição, aplicar orçamento como despesa real (404/409), atualizar e remover |
+
+**Resultado:** 81 testes de integração + 46 unitários = **127 testes**, 13 arquivos. Módulos de rota entre 94% e 100% de cobertura (o que falta é código dentro dos mocks — `authMiddleware.ts`, `database.ts`, corpo interno dos repositories — que não deve mesmo ser exercitado aqui).
+
+### Gaps reais encontrados durante os testes (não corrigidos, fora do escopo desta tarefa)
+
+- **`POST /api/payments` não tem `authMiddleware`** — a rota é pública, diferente de todos os outros módulos de escrita. Mesmo padrão em `GET`/`DELETE /api/payments`.
+- **`GET /api/reports/monthly` também não tem `authMiddleware`** — qualquer um pode ler o relatório consolidado do mês sem estar autenticado.
+- **Não há middleware de erro global** em `createApp.ts`. Erros de validação lançados pelas factories (`ExpenseFactory`, `PaymentFactory`) dentro de uma rota não viram `400` — chegam ao handler de erro padrão do Express e retornam `500`. Os testes documentam esse comportamento (`propaga o erro de validação da factory`), mas o ideal seria um middleware de erro que traduzisse exceções conhecidas em respostas 400.
+
+### Como rodar
+
+```bash
+cd backend
+pnpm test                          # todos os 127 testes
+pnpm test tests/modules/            # só os testes de integração de rotas
+pnpm test:coverage
+```
+
 ## Próximas fases (ainda não implementadas)
-
-### Fase 2 — Backend: testes de integração de rotas
-
-- Adicionar `supertest` como devDependency.
-- Mockar os repositories injetados via `appContext` em vez de subir MongoDB real.
-- Cobrir por módulo: happy path + erro de validação + 401/403 (`authMiddleware`/`authorize`) para `residents`, `expenses`, `payments`, `monthly-balance`, `reports`, `budgets`, `categories`, `auth`.
 
 ### Fase 3 — Frontend: infraestrutura de teste
 
