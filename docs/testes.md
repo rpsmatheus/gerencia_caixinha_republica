@@ -14,10 +14,10 @@ O objetivo é ter métricas de qualidade de verdade — cobertura de teste unit�
 
 ## Estratégia (4 fases)
 
-1. **Backend — testes unitários puros** (implementado nesta branch): funções de cálculo, factories e assinatura/verificação de JWT. Não dependem de banco nem de mocks complexos.
-2. **Backend — testes de integração de rotas**: rotas HTTP com `supertest`, repositories mockados (sem subir MongoDB real).
-3. **Frontend — infraestrutura de teste**: Vitest + React Testing Library, começando por hooks/contextos (`usePermissions`, `AuthContext`) e componentes de apresentação.
-4. **CI**: workflow no GitHub Actions rodando lint + typecheck + testes + cobertura em push/PR.
+1. **Backend — testes unitários puros** ✅: funções de cálculo, factories e assinatura/verificação de JWT. Não dependem de banco nem de mocks complexos.
+2. **Backend — testes de integração de rotas** ✅: rotas HTTP com `supertest`, repositories mockados (sem subir MongoDB real).
+3. **Frontend — infraestrutura de teste** ✅: Vitest + React Testing Library, começando por hooks/contextos (`usePermissions`, `AuthContext`) e componentes de apresentação.
+4. **CI** ✅: workflow no GitHub Actions rodando typecheck + testes + cobertura + build em push/PR (lint fica de fora — ver Fase 4).
 
 ---
 
@@ -92,17 +92,58 @@ pnpm test tests/modules/            # só os testes de integração de rotas
 pnpm test:coverage
 ```
 
-## Próximas fases (ainda não implementadas)
+## Fase 3 — Frontend: infraestrutura de teste ✅
 
-### Fase 3 — Frontend: infraestrutura de teste
+Antes desta fase o `frontend/package.json` não tinha nenhuma ferramenta de teste. Foram adicionados como devDependencies: `vitest`, `@vitest/coverage-v8`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom` e `@testing-library/user-event`.
 
-- Adicionar Vitest + `@testing-library/react` + `@testing-library/jest-dom` + `@testing-library/user-event` + `jsdom` (nenhuma dessas dependências existe hoje no `frontend/package.json`).
-- Testar primeiro lógica isolada: `usePermissions` (matriz admin vs. resident vs. deslogado) e `AuthContext`.
-- Depois, componentes de apresentação simples (`Button`, `ActionButton`, `Notification`, `ResidentCard`, `ResidentBalanceCard`).
-- Mockar `services/api.ts` (via `vi.mock`) para testar páginas críticas (`Residents`, `Expenses`, `MonthlyDashboard`) sem depender do backend real.
+### Configuração
 
-### Fase 4 — Métricas de qualidade e CI
+- `frontend/vitest.config.ts`: usa `mergeConfig` para reaproveitar `vite.config.ts` (mesmos aliases, plugin do React) e adiciona `environment: 'jsdom'`, `setupFiles` e cobertura (`provider: 'v8'`, `include: ['src/**']`).
+- `frontend/tests/setup.ts`: importa `@testing-library/jest-dom/vitest` para os matchers (`toBeInTheDocument`, `toBeDisabled` etc.).
+- `frontend/package.json`: scripts `test` e `test:coverage` adicionados (mesmo padrão do backend).
 
-- Limiar de cobertura inicial (ex.: 60–70% em linhas/branches) nos dois lados, subindo com o tempo.
-- Workflow `.github/workflows/ci.yml`: `lint` + `tsc --noEmit` + `test` + `test:coverage` para backend e frontend em push/PR.
-- Opcional: Codecov/SonarCloud para acompanhar tendência de cobertura, `pnpm audit` para dependências vulneráveis.
+### O que foi coberto
+
+| Arquivo de teste | Alvo | O que valida |
+|---|---|---|
+| `tests/hooks/usePermissions.test.ts` | `src/hooks/usePermissions.ts` | matriz completa: deslogado, `resident`, `admin` — mocka `useAuth` via `vi.mock` |
+| `tests/contexts/AuthContext.test.tsx` | `src/contexts/AuthContext.tsx` | restaura sessão a partir do token salvo (valida com `apiMe`), limpa sessão quando o token é rejeitado, `login`/`logout` persistem e limpam `localStorage`, `updateResident` faz merge parcial — `services/api.ts` mockado, backend real nunca é chamado |
+| `tests/components/Button.test.tsx` | `src/components/Button.tsx` | `onClick`, `disabled`, `loading` desabilita o botão, renderização de ícone |
+| `tests/components/ActionButton.test.tsx` | `src/components/ActionButton.tsx` | modo emoji-only vs. `showText`, `onClick`, `disabled`, `title` customizado |
+| `tests/components/Notification.test.tsx` | `src/components/Notification.tsx` | auto-dismiss via `onClose` após `duration` (timers falsos), duração padrão de 3000ms |
+| `tests/components/ResidentCard.test.tsx` | `src/components/ResidentCard.tsx` | badge Ativo/Inativo, botões condicionais por prop, `onDelete` só dispara após confirmação (`window.confirm` mockado) |
+
+**Resultado:** 28 testes, 6 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. Páginas (`Residents`, `Expenses`, `MonthlyDashboard` etc.) e `services/api.ts` continuam sem testes — ver "não implementado" abaixo.
+
+### Como rodar
+
+```bash
+cd frontend
+pnpm install
+pnpm test
+pnpm test:coverage
+```
+
+### Não implementado nesta fase
+
+Mockar `services/api.ts` para testar as páginas (`Residents`, `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics`) foi deixado de fora — são componentes grandes (300–500 linhas) com bastante estado local, e o retorno maior nesta rodada estava em cobrir a lógica de autorização/sessão e os componentes reutilizados em todas as telas. Fica como próximo passo natural.
+
+## Fase 4 — CI ✅
+
+Workflow `.github/workflows/ci.yml`, dois jobs independentes (`backend` e `frontend`), rodando em push/PR para `main`:
+
+1. `pnpm install --frozen-lockfile`
+2. `tsc --noEmit` (typecheck)
+3. `pnpm test:coverage -- --run` (suíte completa + cobertura; `--run` garante que não entra em watch mode)
+4. `pnpm build` (garante que o build de produção continua funcionando)
+
+### Por que não tem `lint` no pipeline
+
+Os dois `package.json` têm um script `lint` (`eslint src --ext ...`), mas **não existe nenhum arquivo de configuração do ESLint no repositório** (nem `.eslintrc*`, nem `eslint.config.js`) — rodar `pnpm lint` hoje falha imediatamente com "ESLint couldn't find a configuration file", em qualquer branch, não só nesta. Colocar isso como step obrigatório deixaria o CI vermelho a partir do primeiro commit. Ficou de fora do workflow até alguém decidir e criar a configuração (schema do ESLint 8 vs. migrar para 9/flat config é uma decisão de escopo maior do que testes).
+
+### Como rodar localmente o que o CI roda
+
+```bash
+cd backend  && pnpm install && pnpm exec tsc --noEmit && pnpm test:coverage -- --run && pnpm build
+cd frontend && pnpm install && pnpm exec tsc --noEmit && pnpm test:coverage -- --run && pnpm build
+```
