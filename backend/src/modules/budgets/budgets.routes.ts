@@ -2,18 +2,11 @@ import { Router } from 'express';
 import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { authMiddleware } from '../../shared/middlewares/authMiddleware.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
-import { budgetRepo, expenseRepo, residentRepo } from '../../app/appContext.js';
+import { budgetRepo, budgetTemplateRepo, expenseRepo, residentRepo } from '../../app/appContext.js';
 import { ExpenseFactory } from '../../factories/ExpenseFactory.js';
 import { IBudget } from '../../models/Budget.js';
 
 export const budgetRoutes: Router = Router();
-
-function monthRange(year: number, month: number) {
-    return {
-        startDate: new Date(year, month - 1, 1),
-        endDate: new Date(year, month, 0, 23, 59, 59, 999),
-    };
-}
 
 function parseYearMonth(req: any): { year: number; month: number } | null {
     const year = parseInt(req.params.year);
@@ -35,8 +28,58 @@ function toBudgetDTO(budget: IBudget | null) {
 }
 
 /**
+ * GET /api/budgets/templates
+ * Modelos de gastos padrão configuráveis, usados por "Simular Mês Padrão".
+ */
+budgetRoutes.get(
+    '/templates',
+    authMiddleware,
+    authorize('admin', 'resident'),
+    asyncHandler(async (req, res) => {
+        const templates = await budgetTemplateRepo.findAllByRepublic(req.user!.republicId);
+        res.json({ success: true, data: templates });
+    })
+);
+
+/**
+ * POST /api/budgets/templates
+ */
+budgetRoutes.post(
+    '/templates',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        const { description, category, amount } = req.body;
+        if (!description?.trim()) return res.status(400).json({ error: 'description é obrigatório' });
+        if (!category?.trim()) return res.status(400).json({ error: 'category é obrigatório' });
+        if (!amount || amount <= 0) return res.status(400).json({ error: 'amount inválido' });
+
+        const template = await budgetTemplateRepo.create({
+            republicId: req.user!.republicId,
+            description: description.trim(),
+            category,
+            amount,
+        });
+        res.status(201).json({ success: true, data: template });
+    })
+);
+
+/**
+ * DELETE /api/budgets/templates/:id
+ */
+budgetRoutes.delete(
+    '/templates/:id',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        await budgetTemplateRepo.delete(req.params.id, req.user!.republicId);
+        res.json({ success: true, message: 'Modelo removido com sucesso' });
+    })
+);
+
+/**
  * GET /api/budgets/:year/:month
- * Orçamentos planejados do mês + extras cobrados do mês anterior.
+ * Orçamentos planejados do mês.
  */
 budgetRoutes.get(
     '/:year/:month',
@@ -48,36 +91,20 @@ budgetRoutes.get(
         const { year, month } = parsed;
         const user = req.user!;
 
-        const prevMonth = month === 1 ? 12 : month - 1;
-        const prevYear = month === 1 ? year - 1 : year;
-        const prevRange = monthRange(prevYear, prevMonth);
-
-        const [budgets, extrasResult, residentsResult] = await Promise.all([
+        const [budgets, residentsResult] = await Promise.all([
             budgetRepo.findByMonth(user.republicId, year, month),
-            expenseRepo.findAll(user, 1, 10000, { startDate: prevRange.startDate, endDate: prevRange.endDate, isExtra: true }),
             residentRepo.findAll({ republicId: user.republicId }, 1, 1000),
         ]);
 
         const budgetsTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
-        const extrasTotal = extrasResult.data.reduce((sum, e) => sum + e.amount, 0);
-        const totalWithExtras = budgetsTotal + extrasTotal;
         const activeResidents = residentsResult.data.filter((r) => r.isActive).length;
-        const perPersonDivision = activeResidents > 0 ? totalWithExtras / activeResidents : 0;
+        const perPersonDivision = activeResidents > 0 ? budgetsTotal / activeResidents : 0;
 
         res.json({
             success: true,
             data: {
                 budgets: budgets.map((b) => toBudgetDTO(b)),
-                extras: extrasResult.data.map((e) => ({
-                    id: String(e._id),
-                    description: e.description,
-                    amount: e.amount,
-                    category: e.category,
-                    expenseDate: e.expenseDate,
-                })),
-                extrasTotal,
                 budgetsTotal,
-                totalWithExtras,
                 activeResidents,
                 perPersonDivision,
             },
@@ -87,8 +114,8 @@ budgetRoutes.get(
 
 /**
  * POST /api/budgets/simulate/:year/:month
- * Copia as despesas comuns (não-extras) do mês anterior como orçamento
- * planejado deste mês — um ponto de partida "mesmo do mês passado".
+ * Instancia os modelos de gasto configurados (água, luz, internet...) como
+ * orçamento planejado deste mês — idempotente por descrição.
  */
 budgetRoutes.post(
     '/simulate/:year/:month',
@@ -100,27 +127,19 @@ budgetRoutes.post(
         const { year, month } = parsed;
         const user = req.user!;
 
-        const prevMonth = month === 1 ? 12 : month - 1;
-        const prevYear = month === 1 ? year - 1 : year;
-        const prevRange = monthRange(prevYear, prevMonth);
-
-        const prevExpenses = await expenseRepo.findAll(user, 1, 10000, {
-            startDate: prevRange.startDate,
-            endDate: prevRange.endDate,
-            isExtra: false,
-        });
+        const templates = await budgetTemplateRepo.findAllByRepublic(user.republicId);
 
         const created = [];
-        for (const expense of prevExpenses.data) {
-            const already = await budgetRepo.findByDescriptionForMonth(user.republicId, year, month, expense.description);
+        for (const template of templates) {
+            const already = await budgetRepo.findByDescriptionForMonth(user.republicId, year, month, template.description);
             if (already) continue;
             const budget = await budgetRepo.create({
                 republicId: user.republicId,
                 year,
                 month,
-                description: expense.description,
-                category: expense.category,
-                amount: expense.amount,
+                description: template.description,
+                category: template.category,
+                amount: template.amount,
             });
             created.push(budget);
         }
@@ -130,8 +149,8 @@ budgetRoutes.post(
             success: true,
             data: budgets.map((b) => toBudgetDTO(b)),
             message: created.length > 0
-                ? `${created.length} orçamento(s) simulado(s) a partir do mês anterior`
-                : 'Nenhuma despesa nova para simular — mês anterior sem despesas comuns ou já simulado',
+                ? `${created.length} orçamento(s) simulado(s) a partir dos modelos configurados`
+                : 'Nenhum modelo novo para simular — configure modelos em "Modelos" ou já foram simulados este mês',
         });
     })
 );
@@ -155,7 +174,6 @@ budgetRoutes.post(
             category: budget.category,
             amount: budget.amount,
             expenseDate: new Date(),
-            isExtra: false,
         }, user);
         const savedExpense = await expenseRepo.save(expense);
 

@@ -1,6 +1,6 @@
 /**
  * Página de Orçamentos Mensais
- * 
+ *
  * @author Manus AI
  * @version 2.5.0
  */
@@ -19,22 +19,23 @@ interface Budget {
   isApplied: boolean;
 }
 
-interface Extra {
-  id: string;
-  description: string;
-  amount: number;
-  category: string;
-  expenseDate: string;
-}
-
 interface BudgetData {
   budgets: Budget[];
-  extras: Extra[];
-  extrasTotal: number;
   budgetsTotal: number;
-  totalWithExtras: number;
   activeResidents: number;
   perPersonDivision: number;
+}
+
+interface BudgetTemplate {
+  id: string;
+  description: string;
+  category: string;
+  amount: number;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 const MONTHS_LABELS = [
@@ -44,6 +45,8 @@ const MONTHS_LABELS = [
 
 export default function Budgets() {
   const [data, setData] = useState<BudgetData | null>(null);
+  const [templates, setTemplates] = useState<BudgetTemplate[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -52,9 +55,16 @@ export default function Budgets() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
 
+  const [showTemplateForm, setShowTemplateForm] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({ description: '', category: '', amount: 0 });
+
   useEffect(() => {
     loadBudgetData();
   }, [selectedYear, selectedMonthNum]);
+
+  useEffect(() => {
+    loadTemplatesAndCategories();
+  }, []);
 
   const loadBudgetData = async () => {
     try {
@@ -69,10 +79,57 @@ export default function Budgets() {
     }
   };
 
+  const loadTemplatesAndCategories = async () => {
+    try {
+      const [tplRes, catRes] = await Promise.all([
+        api.get('/api/budgets/templates'),
+        api.get('/api/categories'),
+      ]);
+      setTemplates(tplRes.data.data);
+      setCategories(catRes.data.data);
+      if (catRes.data.data.length > 0 && !newTemplate.category) {
+        setNewTemplate(prev => ({ ...prev, category: catRes.data.data[0].name }));
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar modelos');
+    }
+  };
+
+  const handleAddTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTemplate.description.trim() || !newTemplate.amount) {
+      setError('Descrição e valor são obrigatórios');
+      return;
+    }
+    try {
+      const res = await api.post('/api/budgets/templates', newTemplate);
+      setTemplates([...templates, res.data.data]);
+      setNewTemplate({ description: '', category: categories[0]?.name || '', amount: 0 });
+      setSuccess('Modelo adicionado!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao adicionar modelo');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar este modelo?')) return;
+    try {
+      await api.delete(`/api/budgets/templates/${id}`);
+      setTemplates(templates.filter(t => t.id !== id));
+      setSuccess('Modelo deletado!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao deletar modelo');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const handleSimulate = async () => {
     try {
-      await api.post(`/api/budgets/simulate/${selectedYear}/${selectedMonthNum}`);
-      setSuccess('Orçamentos simulados com sucesso!');
+      const res = await api.post(`/api/budgets/simulate/${selectedYear}/${selectedMonthNum}`);
+      setSuccess(res.data.message || 'Orçamentos simulados com sucesso!');
       loadBudgetData();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -123,24 +180,35 @@ export default function Budgets() {
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Orçamentos Mensais</h1>
           <p className="text-slate-500 font-medium mt-2">Simule e planeje os gastos da república</p>
         </div>
-        <Button
-          variant="primary"
-          size="lg"
-          icon="📊"
-          onClick={handleSimulate}
-          className="w-full sm:w-auto"
-        >
-          Simular Mês Padrão
-        </Button>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            size="lg"
+            icon="🧾"
+            onClick={() => setShowTemplateForm(!showTemplateForm)}
+            fullWidth
+          >
+            Modelos
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            icon="📊"
+            onClick={handleSimulate}
+            fullWidth
+          >
+            Simular Mês Padrão
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-tighter">Ano</label>
-          <select 
-            value={selectedYear} 
-            onChange={e => setSelectedYear(e.target.value)} 
+          <select
+            value={selectedYear}
+            onChange={e => setSelectedYear(e.target.value)}
             className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
           >
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={String(y)}>{y}</option>)}
@@ -148,9 +216,9 @@ export default function Budgets() {
         </div>
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-tighter">Mês</label>
-          <select 
-            value={selectedMonthNum} 
-            onChange={e => setSelectedMonthNum(e.target.value)} 
+          <select
+            value={selectedMonthNum}
+            onChange={e => setSelectedMonthNum(e.target.value)}
             className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
           >
             {MONTHS_LABELS.map((m, i) => <option key={i} value={String(i + 1).padStart(2, '0')}>{m}</option>)}
@@ -163,22 +231,12 @@ export default function Budgets() {
 
       {/* Stats Cards */}
       {data && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-indigo-200 transition-all">
             <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Orçamentos</div>
             <div className="text-3xl font-black text-indigo-600 mt-2">R$ {data.budgetsTotal.toFixed(2)}</div>
           </div>
-          
-          <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-orange-200 transition-all">
-            <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Extras Anterior</div>
-            <div className="text-3xl font-black text-orange-600 mt-2">R$ {data.extrasTotal.toFixed(2)}</div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-slate-300 transition-all">
-            <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Total Previsto</div>
-            <div className="text-3xl font-black text-slate-900 mt-2">R$ {data.totalWithExtras.toFixed(2)}</div>
-          </div>
-          
+
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl shadow-lg border-2 border-green-500 relative overflow-hidden">
             <div className="absolute top-2 right-2 text-3xl opacity-10">💰</div>
             <div className="text-green-800 text-xs font-black uppercase tracking-widest">Divisão por Pessoa</div>
@@ -194,7 +252,7 @@ export default function Budgets() {
           <span className="w-1 h-8 bg-indigo-600 rounded-full"></span>
           Gastos Orçados
         </h2>
-        
+
         <div className="bg-white rounded-2xl shadow-sm border-2 border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -233,38 +291,38 @@ export default function Budgets() {
                     <td className="px-6 py-4">
                       <div className="flex justify-center items-center gap-2">
                         {editingId === b.id ? (
-                          <Button 
-                            variant="success" 
-                            size="sm" 
-                            icon="✓" 
-                            onClick={() => handleUpdate(b.id)} 
+                          <Button
+                            variant="success"
+                            size="sm"
+                            icon="✓"
+                            onClick={() => handleUpdate(b.id)}
                           />
                         ) : (
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            icon="✎" 
-                            onClick={() => { setEditingId(b.id); setEditAmount(String(b.amount)); }} 
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon="✎"
+                            onClick={() => { setEditingId(b.id); setEditAmount(String(b.amount)); }}
                           />
                         )}
-                        
+
                         {!b.isApplied ? (
-                          <Button 
-                            variant="primary" 
-                            size="sm" 
-                            icon="✓" 
-                            onClick={() => handleApply(b.id)} 
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon="✓"
+                            onClick={() => handleApply(b.id)}
                             title="Aplicar como despesa real"
                           />
                         ) : (
                           <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs font-black rounded-lg border border-green-200">APLICADO</span>
                         )}
-                        
-                        <Button 
-                          variant="danger" 
-                          size="sm" 
-                          icon="✕" 
-                          onClick={() => handleDelete(b.id)} 
+
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          icon="✕"
+                          onClick={() => handleDelete(b.id)}
                         />
                       </div>
                     </td>
@@ -283,6 +341,75 @@ export default function Budgets() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Modelos */}
+      {showTemplateForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Modelos de Gastos Padrão</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Usados por "Simular Mês Padrão" para pré-preencher os orçamentos do mês (água, luz, internet...).
+            </p>
+            <form onSubmit={handleAddTemplate} className="space-y-3 mb-6">
+              <input
+                type="text"
+                placeholder="Descrição (ex: Água)"
+                value={newTemplate.description}
+                onChange={e => setNewTemplate({ ...newTemplate, description: e.target.value })}
+                className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={newTemplate.category}
+                  onChange={e => setNewTemplate({ ...newTemplate, category: e.target.value })}
+                  className="flex-1 px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Valor"
+                  value={newTemplate.amount || ''}
+                  onChange={e => setNewTemplate({ ...newTemplate, amount: parseFloat(e.target.value) || 0 })}
+                  className="w-28 px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
+                />
+                <Button variant="primary" size="md" icon="+" type="submit" />
+              </div>
+            </form>
+            <div className="space-y-2 max-h-56 overflow-y-auto mb-6">
+              {templates.map(t => (
+                <div key={t.id} className="flex justify-between items-center p-3 border-2 border-slate-100 rounded-lg hover:border-slate-200 transition-all">
+                  <div>
+                    <span className="font-bold text-slate-900">{t.description}</span>
+                    <span className="ml-2 text-xs text-slate-500">{t.category} · R$ {t.amount.toFixed(2)}</span>
+                  </div>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon="✕"
+                    onClick={() => handleDeleteTemplate(t.id)}
+                    title="Deletar modelo"
+                  />
+                </div>
+              ))}
+              {templates.length === 0 && (
+                <p className="text-center text-slate-400 italic text-sm py-4">Nenhum modelo cadastrado.</p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setShowTemplateForm(false)}
+              fullWidth
+            >
+              Fechar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
