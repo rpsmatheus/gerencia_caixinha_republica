@@ -2,11 +2,29 @@ import { Router } from 'express';
 import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { expenseRepo } from '../../app/appContext.js';
 import { ExpenseFactory } from '../../factories/ExpenseFactory.js';
+import { IExpense } from '../../models/Expense.js';
 
 import { authMiddleware } from '../../shared/middlewares/authMiddleware.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
 
 export const expenseRoutes: Router = Router();
+
+function toExpenseDTO(expense: IExpense) {
+  return {
+    id: String(expense._id),
+    description: expense.description,
+    category: expense.category,
+    amount: expense.amount,
+    // <input type="date"> exige exatamente YYYY-MM-DD — ISO completo com hora
+    // faz o navegador descartar o valor silenciosamente ao editar.
+    expenseDate: new Date(expense.expenseDate).toISOString().split('T')[0],
+    isExtra: expense.isExtra,
+    notes: expense.notes ?? null,
+    proofUrl: expense.proofUrl ?? null,
+    createdAt: expense.createdAt,
+    updatedAt: expense.updatedAt,
+  };
+}
 
 /**
  * 📌 GET /api/expenses
@@ -51,7 +69,7 @@ expenseRoutes.get(
 
     res.json({
       success: true,
-      data,
+      data: data.map(toExpenseDTO),
       pagination: {
         page,
         limit,
@@ -71,14 +89,6 @@ expenseRoutes.get(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const filter =
-      user.role === 'admin'
-        ? {}
-        : { republicId: user.republicId };
-
-    const result = await expenseRepo.findAll(user, page, limit);
     const expense = await expenseRepo.findById(req.params.id, user);
 
     if (!expense) {
@@ -90,7 +100,7 @@ expenseRoutes.get(
 
     res.json({
       success: true,
-      data: expense,
+      data: toExpenseDTO(expense),
     });
   })
 );
@@ -110,7 +120,7 @@ expenseRoutes.post(
 
     res.status(201).json({
       success: true,
-      data: saved,
+      data: toExpenseDTO(saved),
     });
   })
 );
@@ -124,7 +134,17 @@ expenseRoutes.put(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    const updated = await expenseRepo.update(req.params.id, req.body, user);
+    const { description, category, amount, expenseDate, isExtra, notes } = req.body;
+
+    const patch: Record<string, unknown> = {};
+    if (description !== undefined) patch.description = description;
+    if (category !== undefined) patch.category = category;
+    if (amount !== undefined) patch.amount = amount;
+    if (expenseDate !== undefined) patch.expenseDate = new Date(expenseDate);
+    if (isExtra !== undefined) patch.isExtra = isExtra;
+    if (notes !== undefined) patch.notes = notes;
+
+    const updated = await expenseRepo.update(req.params.id, patch, user);
 
     if (!updated) {
       return res.status(404).json({
@@ -135,7 +155,7 @@ expenseRoutes.put(
 
     res.json({
       success: true,
-      data: updated,
+      data: toExpenseDTO(updated),
     });
   })
 );

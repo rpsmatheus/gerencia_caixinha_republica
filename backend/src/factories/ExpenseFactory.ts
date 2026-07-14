@@ -1,4 +1,4 @@
-import { IExpense, ICreateExpenseDTO, ExpenseCategory } from '../models/Expense.js';
+import { IExpense, ICreateExpenseDTO } from '../models/Expense.js';
 
 export class ExpenseFactory {
   static create(data: ICreateExpenseDTO, user: { id: string, republicId: string }): IExpense {

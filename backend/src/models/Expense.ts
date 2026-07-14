@@ -34,7 +34,7 @@ export interface IExpense {
   description: string;
   
   /** Categoria da despesa */
-  category: ExpenseCategory;
+  category: string;
   
   /** Valor da despesa em reais */
   amount: number;
@@ -66,7 +66,7 @@ export interface ICreateExpenseDTO {
   description: string;
   
   /** Categoria da despesa */
-  category: ExpenseCategory;
+  category: string;
   
   /** Valor da despesa em reais */
   amount: number;
@@ -89,7 +89,7 @@ export interface IUpdateExpenseDTO {
   description?: string;
   
   /** Nova categoria (opcional) */
-  category?: ExpenseCategory;
+  category?: string;
   
   /** Novo valor (opcional) */
   amount?: number;
@@ -112,7 +112,7 @@ export interface IUpdateExpenseDTO {
  */
 export interface IExpenseFilter {
   /** Filtrar por categoria */
-  category?: ExpenseCategory;
+  category?: string;
   
   /** Filtrar por tipo (extra ou regular) */
   isExtra?: boolean;
@@ -150,7 +150,7 @@ export interface IExpenseSummary {
   count: number;
   
   /** Despesas por categoria */
-  byCategory: Record<ExpenseCategory, number>;
+  byCategory: Record<string, number>;
 }
 
 /**
