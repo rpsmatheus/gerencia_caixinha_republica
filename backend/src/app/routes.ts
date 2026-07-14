@@ -6,8 +6,12 @@ import { categoryRoutes } from '../modules/categories/categories.routes.js';
 import { budgetRoutes } from '../modules/budgets/budgets.routes.js';
 import { monthlyBalanceRoutes } from '../modules/monthly-balance/monthlyBalance.routes.js';
 import { reportRoutes } from '../modules/reports/reports.routes.js';
+import { authRoutes } from '../modules/auth/auth.routes.js';
 
 const router: Router = Router();
+
+// 📌 Auth
+router.use('/auth', authRoutes);
 
 // 📌 Residents
 router.use('/residents', residentRoutes);

@@ -75,6 +75,14 @@ export async function apiLogin(
   return res.data.data;
 }
 
+export async function apiRegister(
+  nickname: string,
+  password: string
+): Promise<{ accessToken: string; resident: AuthResident }> {
+  const res = await api.post('/api/auth/register', { nickname, password });
+  return res.data.data;
+}
+
 export async function apiLogout(): Promise<void> {
   await api.post('/api/auth/logout');
 }
@@ -121,7 +129,6 @@ export interface Expense {
   category: string;
   amount: number;
   expenseDate: string;
-  isExtra: boolean;
   proofUrl?: string;
   notes?: string;
   createdAt: string;
@@ -133,7 +140,6 @@ export interface CreateExpenseDTO {
   category: string;
   amount: number;
   expenseDate: string;
-  isExtra?: boolean;
   notes?: string;
 }
 
@@ -291,66 +297,4 @@ export const expenseAPI = {
 };
 
 export default api;
-
-// ── Monthly Responsible Assignments ──────────────────────────────────────────
-
-export interface MonthlyResponsibleAssignment {
-  id: string;
-  residentId: string;
-  startMonthKey: string;
-  endMonthKey: string;
-  assignedBy: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const monthlyResponsibleAPI = {
-  /** Verifica se o usuário autenticado é responsável para um mês específico */
-  checkMe: (monthKey: string) =>
-    api.get<{ success: boolean; data: { isResponsible: boolean; assignment?: MonthlyResponsibleAssignment } }>(
-      `/api/monthly-responsibles/me?monthKey=${encodeURIComponent(monthKey)}`
-    ),
-
-  /** Lista atribuições (admin only) */
-  list: (params?: { monthKey?: string; residentId?: string; isActive?: boolean }) =>
-    api.get<{ success: boolean; data: MonthlyResponsibleAssignment[] }>(
-      '/api/monthly-responsibles',
-      { params }
-    ),
-
-  /** Cria nova atribuição (admin only) */
-  create: (data: { residentId: string; startMonthKey: string; endMonthKey: string }) =>
-    api.post<{ success: boolean; data: MonthlyResponsibleAssignment }>(
-      '/api/monthly-responsibles',
-      data
-    ),
-
-  /** Atualiza atribuição (admin only) */
-  update: (id: string, data: { startMonthKey?: string; endMonthKey?: string; isActive?: boolean }) =>
-    api.put<{ success: boolean; data: MonthlyResponsibleAssignment }>(
-      `/api/monthly-responsibles/${id}`,
-      data
-    ),
-
-  /** Desativa atribuição — soft delete (admin only) */
-  deactivate: (id: string) =>
-    api.delete<{ success: boolean }>(`/api/monthly-responsibles/${id}`),
-};
-
-/**
- * Verifica se o residente possui qualquer atribuição de responsável ativa.
- * Usado para decidir se o menu "Responsáveis" deve ser exibido.
- */
-export async function apiCheckResponsible(residentId: string): Promise<boolean> {
-  try {
-    const res = await api.get<{ success: boolean; data: MonthlyResponsibleAssignment[] }>(
-      '/api/monthly-responsibles',
-      { params: { residentId, isActive: true } },
-    );
-    return (res.data.data?.length ?? 0) > 0;
-  } catch {
-    return false;
-  }
-}
 

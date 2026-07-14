@@ -33,9 +33,7 @@ reportRoutes.get('/monthly', asyncHandler(async (req, res) => {
     const activeResidents = residentsResult.data.filter(r => r.isActive);
 
     // Totais de despesas
-    const commonTotal = expenses.filter(e => !e.isExtra).reduce((s, e) => s + e.amount, 0);
-    const extraTotal = expenses.filter(e => e.isExtra).reduce((s, e) => s + e.amount, 0);
-    const totalExpenses = commonTotal + extraTotal;
+    const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
 
     // Despesas por categoria
     const byCategory: Record<string, number> = {};
@@ -56,7 +54,7 @@ reportRoutes.get('/monthly', asyncHandler(async (req, res) => {
         data: {
             year, month, monthKey,
             expenses: {
-                total: totalExpenses, commonTotal, extraTotal,
+                total: totalExpenses,
                 count: expenses.length, byCategory,
             },
             balances: {

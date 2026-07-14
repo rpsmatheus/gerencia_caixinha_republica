@@ -40,8 +40,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/');
   };
 
-  const isAdmin = resident?.role === 'admin';
-
   // Menu baseado em papel
   const menuItems = [
     { path: '/monthly', label: 'Caixinha Mensal', icon: '💰', show: true },
@@ -49,7 +47,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: '/expenses', label: 'Despesas', icon: '💸', show: true },
     { path: '/budgets', label: 'Orçamentos', icon: '📋', show: true },
     { path: '/analytics', label: 'Análises', icon: '📈', show: true },
-    { path: '/monthly-responsibles', label: 'Responsáveis', icon: '👑', show: isAdmin },
   ].filter(item => item.show);
 
   return (

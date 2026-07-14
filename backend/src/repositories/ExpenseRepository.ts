@@ -21,16 +21,12 @@ export class ExpenseRepository {
 
     const query: any = {};
 
-    if (user.role !== 'admin') {
-      query.republicId = user.republicId;
-    }
+    // Cada admin é dono de UMA república (criada no registro), não de todas —
+    // sem esse filtro, despesas de repúblicas diferentes vazam entre si.
+    query.republicId = user.republicId;
 
     if (filters.category) {
       query.category = filters.category;
-    }
-
-    if (filters.isExtra !== undefined) {
-      query.isExtra = filters.isExtra;
     }
 
     if (filters.search) {
@@ -80,9 +76,9 @@ export class ExpenseRepository {
 
     const query: any = { _id: new ObjectId(id) };
 
-    if (user.role !== 'admin') {
-      query.republicId = user.republicId;
-    }
+    // Cada admin é dono de UMA república (criada no registro), não de todas —
+    // sem esse filtro, despesas de repúblicas diferentes vazam entre si.
+    query.republicId = user.republicId;
 
     return await collection.findOne(query);
   }
@@ -107,9 +103,9 @@ export class ExpenseRepository {
 
     const query: any = { _id: new ObjectId(id) };
 
-    if (user.role !== 'admin') {
-      query.republicId = user.republicId;
-    }
+    // Cada admin é dono de UMA república (criada no registro), não de todas —
+    // sem esse filtro, despesas de repúblicas diferentes vazam entre si.
+    query.republicId = user.republicId;
 
     await collection.updateOne(
       query,
@@ -130,9 +126,9 @@ export class ExpenseRepository {
 
     const query: any = { _id: new ObjectId(id) };
 
-    if (user.role !== 'admin') {
-      query.republicId = user.republicId;
-    }
+    // Cada admin é dono de UMA república (criada no registro), não de todas —
+    // sem esse filtro, despesas de repúblicas diferentes vazam entre si.
+    query.republicId = user.republicId;
 
     await collection.deleteOne(query);
   }

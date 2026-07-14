@@ -18,7 +18,6 @@ interface Expense {
   category: string;
   amount: number;
   expenseDate: string;
-  isExtra?: boolean;
 }
 
 export default function Analytics() {
@@ -76,10 +75,8 @@ export default function Analytics() {
 
   const filteredExpenses = expenses.filter(exp => exp.expenseDate.substring(0, 7) === selectedMonth);
 
-  // Cálculos locais (Diferenciando extras)
+  // Cálculos locais
   const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const regularExpensesTotal = filteredExpenses.filter(e => !e.isExtra).reduce((sum, exp) => sum + exp.amount, 0);
-  const extraExpensesTotal = filteredExpenses.filter(e => !!e.isExtra).reduce((sum, exp) => sum + exp.amount, 0);
   const expenseCount = filteredExpenses.length;
 
   // Dados vindos do endpoint mensal (que já aplica o offset)
@@ -151,12 +148,10 @@ export default function Analytics() {
             <div className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass}`}>
               <p className="text-sm text-gray-600">Total Cadastrado no Mês</p>
               <p className="text-2xl font-bold text-indigo-600 mt-2">R$ {totalExpenses.toFixed(2)}</p>
-              <p className="text-xs mt-1 text-gray-500">Comuns: R$ {regularExpensesTotal.toFixed(2)} | Extras: R$ {extraExpensesTotal.toFixed(2)}</p>
             </div>
             <div className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass}`}>
               <p className="text-sm text-gray-600">Total Cobrado (Divisão)</p>
               <p className="text-2xl font-bold text-blue-600 mt-2">R$ {totalCobranca.toFixed(2)}</p>
-              <p className="text-xs mt-1 text-gray-500">Inclui extras do mês anterior</p>
             </div>
             <div className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass}`}>
               <p className="text-sm text-gray-600">Adimplência</p>

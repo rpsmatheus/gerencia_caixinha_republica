@@ -1,24 +1,12 @@
-/**
- * AuthContext — versão MOCKADA (drop-in).
- *
- * Mantém EXATAMENTE a mesma interface pública da versão final do zip
- * (resident, accessToken, isAuthenticated, mustChangePassword, isResponsible,
- *  login, logout, updateResident), porém usa um admin fixo em memória.
- *
- * Motivo: o backend de autenticação (Sprint 5) ainda não existe. Assim as
- * páginas funcionam normalmente durante as Sprints 8 e 9.
- *
- * Quando a Sprint 5 for implementada, troque APENAS o corpo de login() por
- * uma chamada real (apiLogin) — nenhuma página precisa mudar.
- */
-
 import {
   createContext,
   useContext,
   useState,
   useCallback,
+  useEffect,
   ReactNode,
 } from 'react';
+import { apiLogin, apiLogout, apiMe, apiRegister } from '../services/api';
 
 export interface AuthResident {
   id: string;
@@ -36,44 +24,79 @@ interface AuthContextType {
   accessToken: string | null;
   isAuthenticated: boolean;
   mustChangePassword: boolean;
-  isResponsible: boolean;
+  isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
+  register: (nickname: string, password: string) => Promise<void>;
   logout: () => void;
   updateResident: (patch: Partial<AuthResident>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ── MOCK: admin fixo (substituir quando a Sprint 5 existir) ──────────────────
-const MOCK_ADMIN: AuthResident = {
-  id: 'mock-admin-id',
-  nickname: 'admin',
-  fullName: 'Administrador (mock)',
-  phone: null,
-  category: undefined,
-  role: 'admin',
-  isActive: true,
-  mustChangePassword: false,
-};
+const TOKEN_KEY = 'caixinha_token';
+const RESIDENT_KEY = 'caixinha_resident';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Já entra "logado" como admin para destravar o desenvolvimento das telas
-  const [resident, setResident] = useState<AuthResident | null>(MOCK_ADMIN);
-  const [accessToken, setAccessToken] = useState<string | null>('mock-token');
+  const [resident, setResident] = useState<AuthResident | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback(async (_identifier: string, _password: string) => {
-    // TODO Sprint 5: const { accessToken, resident } = await apiLogin(_identifier, _password)
-    setResident(MOCK_ADMIN);
-    setAccessToken('mock-token');
+  // Restaura a sessão a partir do token salvo, revalidando contra o backend
+  useEffect(() => {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+
+    if (!storedToken) {
+      setIsLoading(false);
+      return;
+    }
+
+    setAccessToken(storedToken);
+
+    apiMe()
+      .then((me) => {
+        setResident(me);
+        localStorage.setItem(RESIDENT_KEY, JSON.stringify(me));
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(RESIDENT_KEY);
+        setAccessToken(null);
+        setResident(null);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
+  const persistSession = useCallback((token: string, sessionResident: AuthResident) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(RESIDENT_KEY, JSON.stringify(sessionResident));
+    setAccessToken(token);
+    setResident(sessionResident);
+  }, []);
+
+  const login = useCallback(async (identifier: string, password: string) => {
+    const { accessToken: token, resident: loggedResident } = await apiLogin(identifier, password);
+    persistSession(token, loggedResident);
+  }, [persistSession]);
+
+  const register = useCallback(async (nickname: string, password: string) => {
+    const { accessToken: token, resident: newResident } = await apiRegister(nickname, password);
+    persistSession(token, newResident);
+  }, [persistSession]);
+
   const logout = useCallback(() => {
+    apiLogout().catch(() => {});
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(RESIDENT_KEY);
     setResident(null);
     setAccessToken(null);
   }, []);
 
   const updateResident = useCallback((patch: Partial<AuthResident>) => {
-    setResident((prev) => (prev ? { ...prev, ...patch } : prev));
+    setResident((prev) => {
+      const next = prev ? { ...prev, ...patch } : prev;
+      if (next) localStorage.setItem(RESIDENT_KEY, JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   return (
@@ -83,9 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         isAuthenticated: !!accessToken && !!resident,
         mustChangePassword: resident?.mustChangePassword ?? false,
-        // admin é sempre tratado como responsável
-        isResponsible: resident?.role === 'admin',
+        isLoading,
         login,
+        register,
         logout,
         updateResident,
       }}

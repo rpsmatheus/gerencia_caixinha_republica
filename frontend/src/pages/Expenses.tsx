@@ -15,7 +15,6 @@ interface Expense {
   category: string;
   amount: number;
   expenseDate: string;
-  isExtra?: boolean;
   notes?: string;
   proofUrl?: string;
   createdAt: string;
@@ -56,7 +55,6 @@ export default function Expenses() {
     category: '',
     amount: 0,
     expenseDate: new Date().toISOString().split('T')[0],
-    isExtra: false,
   });
 
   useEffect(() => {
@@ -142,7 +140,6 @@ export default function Expenses() {
         category: formData.category || (categories.length > 0 ? categories[0].name : ''),
         amount: 0,
         expenseDate: new Date().toISOString().split('T')[0],
-        isExtra: false,
       });
       setShowForm(false);
       await loadData();
@@ -161,7 +158,6 @@ export default function Expenses() {
       category: expense.category,
       amount: expense.amount,
       expenseDate: expense.expenseDate,
-      isExtra: !!expense.isExtra,
     });
     setShowEditModal(true);
   };
@@ -205,8 +201,6 @@ export default function Expenses() {
   });
 
   const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const regularTotal = filteredExpenses.filter(e => !e.isExtra).reduce((sum, e) => sum + e.amount, 0);
-  const extraTotal = filteredExpenses.filter(e => e.isExtra).reduce((sum, e) => sum + e.amount, 0);
 
   return (
     <div className="space-y-8">
@@ -241,18 +235,14 @@ export default function Expenses() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-indigo-200 transition-all">
           <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Total Cadastrado</div>
           <div className="text-3xl font-black text-slate-900 mt-2">R$ {totalAmount.toFixed(2)}</div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-indigo-200 transition-all">
-          <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Despesas Comuns</div>
-          <div className="text-3xl font-black text-indigo-600 mt-2">R$ {regularTotal.toFixed(2)}</div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-orange-200 transition-all">
-          <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Extras Cadastrados</div>
-          <div className="text-3xl font-black text-orange-600 mt-2">R$ {extraTotal.toFixed(2)}</div>
+          <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Qtd. Despesas</div>
+          <div className="text-3xl font-black text-indigo-600 mt-2">{filteredExpenses.length}</div>
         </div>
       </div>
 
@@ -324,12 +314,7 @@ export default function Expenses() {
                 filteredExpenses.map(expense => (
                   <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900">{expense.description}</span>
-                        {expense.isExtra && (
-                          <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-orange-100 text-orange-800 border border-orange-200 uppercase">Extra</span>
-                        )}
-                      </div>
+                      <span className="font-black text-slate-900">{expense.description}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">{expense.category}</span>
@@ -429,16 +414,6 @@ export default function Expenses() {
                   onChange={e => setFormData({ ...formData, expenseDate: e.target.value })}
                   className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
                 />
-              </div>
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="isExtra"
-                  checked={formData.isExtra}
-                  onChange={e => setFormData({ ...formData, isExtra: e.target.checked })}
-                  className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
-                />
-                <label htmlFor="isExtra" className="text-sm font-bold text-slate-700 cursor-pointer">Marcar como Extra</label>
               </div>
               <div className="flex gap-3 pt-6">
                 <Button

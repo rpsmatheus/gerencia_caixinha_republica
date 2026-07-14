@@ -1,31 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import { ObjectId } from 'mongodb';
 import { DatabaseConnection } from '../../config/database.js';
+import { verifyAccessToken } from '../jwt.js';
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const userHeader = req.headers['x-user'];
+  const authHeader = req.headers.authorization;
 
-  if (!userHeader || typeof userHeader !== 'string') {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Não autenticado' });
   }
 
-  let parsed: { id?: string };
+  const token = authHeader.slice('Bearer '.length);
 
+  let payload;
   try {
-    parsed = JSON.parse(userHeader);
+    payload = await verifyAccessToken(token);
   } catch {
-    return res.status(401).json({ error: 'Token inválido' });
-  }
-
-  if (!parsed.id) {
-    return res.status(401).json({ error: 'ID obrigatório' });
+    return res.status(401).json({ error: 'Token inválido ou expirado' });
   }
 
   const db = DatabaseConnection.getInstance().getDatabase();
 
-  // 🔥 aqui é o ponto crítico
+  // Revalida contra o banco para refletir desativação/mudança de papel imediatamente
   const user = await db.collection('residents').findOne({
-    _id: new ObjectId(parsed.id),
+    _id: new ObjectId(payload.sub),
     isActive: true,
   });
 
@@ -34,7 +32,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   }
 
   req.user = {
-    id: parsed.id,
+    id: payload.sub,
     role: user.role,
     republicId: user.republicId,
   };

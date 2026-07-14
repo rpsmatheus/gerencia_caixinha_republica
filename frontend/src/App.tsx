@@ -9,16 +9,17 @@ import MonthlyDashboard from './pages/MonthlyDashboard';
 import Analytics from './pages/Analytics';
 import Budgets from './pages/Budgets';
 import ChangePassword from './pages/ChangePassword';
-import MonthlyResponsibles from './pages/MonthlyResponsibles';
 
 // Rota privada: verifica token real + redireciona para troca de senha se necessário
 function PrivateRoute({ children }: { children: JSX.Element }) {
-  const { isAuthenticated, mustChangePassword } = useAuth();
+  const { isAuthenticated, mustChangePassword, isLoading } = useAuth();
 
-  // Compatibilidade legada: aceita token antigo enquanto migramos
-  const hasLegacyToken = !!localStorage.getItem('token');
+  // Aguarda a restauração da sessão a partir do token salvo antes de decidir
+  if (isLoading) {
+    return null;
+  }
 
-  if (!isAuthenticated && !hasLegacyToken) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
@@ -26,15 +27,6 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
     return <Navigate to="/change-password" replace />;
   }
 
-  return children;
-}
-
-// Rota exclusiva para admin
-function AdminRoute({ children }: { children: JSX.Element }) {
-  const { resident } = useAuth();
-  if (resident?.role !== 'admin') {
-    return <Navigate to="/monthly" replace />;
-  }
   return children;
 }
 
@@ -53,9 +45,6 @@ function AppRoutes() {
               <Route path="/expenses" element={<Expenses />} />
               <Route path="/budgets" element={<Budgets />} />
               <Route path="/analytics" element={<Analytics />} />
-              <Route path="/monthly-responsibles" element={
-                <AdminRoute><MonthlyResponsibles /></AdminRoute>
-              } />
               <Route path="*" element={<Navigate to="/monthly" replace />} />
             </Routes>
           </DashboardLayout>
