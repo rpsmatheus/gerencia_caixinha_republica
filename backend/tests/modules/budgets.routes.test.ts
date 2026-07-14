@@ -135,6 +135,70 @@ describe('GET /api/budgets/:year/:month', () => {
   });
 });
 
+describe('POST /api/budgets/:year/:month', () => {
+  it('rejeita quando o usuário não é admin (403)', async () => {
+    const res = await request(app)
+      .post('/api/budgets/2026/6')
+      .set(authHeader('resident'))
+      .send({ description: 'Reforma da cozinha', category: 'Moradia', amount: 500 });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('rejeita year/month inválidos', async () => {
+    const res = await request(app)
+      .post('/api/budgets/2026/13')
+      .set(authHeader())
+      .send({ description: 'Reforma da cozinha', category: 'Moradia', amount: 500 });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rejeita campos obrigatórios ausentes', async () => {
+    const res = await request(app)
+      .post('/api/budgets/2026/6')
+      .set(authHeader())
+      .send({ description: '', category: 'Moradia', amount: 500 });
+
+    expect(res.status).toBe(400);
+    expect(budgetRepoMock.create).not.toHaveBeenCalled();
+  });
+
+  it('rejeita amount inválido', async () => {
+    const res = await request(app)
+      .post('/api/budgets/2026/6')
+      .set(authHeader())
+      .send({ description: 'Reforma da cozinha', category: 'Moradia', amount: 0 });
+
+    expect(res.status).toBe(400);
+    expect(budgetRepoMock.create).not.toHaveBeenCalled();
+  });
+
+  it('cria um orçamento avulso direto no mês, sem depender de um modelo', async () => {
+    budgetRepoMock.create.mockResolvedValue(
+      makeBudget({ id: 'b9', description: 'Reforma da cozinha', category: 'Moradia', amount: 500 })
+    );
+
+    const res = await request(app)
+      .post('/api/budgets/2026/6')
+      .set(authHeader())
+      .send({ description: 'Reforma da cozinha', category: 'Moradia', amount: 500 });
+
+    expect(res.status).toBe(201);
+    expect(budgetRepoMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        republicId: 'republic-1',
+        year: 2026,
+        month: 6,
+        description: 'Reforma da cozinha',
+        category: 'Moradia',
+        amount: 500,
+      })
+    );
+    expect(res.body.data.description).toBe('Reforma da cozinha');
+  });
+});
+
 describe('POST /api/budgets/simulate/:year/:month', () => {
   it('cria orçamentos apenas para modelos ainda não simulados neste mês', async () => {
     budgetTemplateRepoMock.findAllByRepublic.mockResolvedValue([
