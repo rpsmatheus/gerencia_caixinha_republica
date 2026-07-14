@@ -24,7 +24,6 @@ interface AuthContextType {
   accessToken: string | null;
   isAuthenticated: boolean;
   mustChangePassword: boolean;
-  isResponsible: boolean;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
   register: (nickname: string, fullName: string, password: string) => Promise<void>;
@@ -107,7 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         isAuthenticated: !!accessToken && !!resident,
         mustChangePassword: resident?.mustChangePassword ?? false,
-        isResponsible: resident?.role === 'admin',
         isLoading,
         login,
         register,

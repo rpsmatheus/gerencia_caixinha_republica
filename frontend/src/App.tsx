@@ -9,7 +9,6 @@ import MonthlyDashboard from './pages/MonthlyDashboard';
 import Analytics from './pages/Analytics';
 import Budgets from './pages/Budgets';
 import ChangePassword from './pages/ChangePassword';
-import MonthlyResponsibles from './pages/MonthlyResponsibles';
 
 // Rota privada: verifica token real + redireciona para troca de senha se necessário
 function PrivateRoute({ children }: { children: JSX.Element }) {
@@ -31,15 +30,6 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   return children;
 }
 
-// Rota exclusiva para admin
-function AdminRoute({ children }: { children: JSX.Element }) {
-  const { resident } = useAuth();
-  if (resident?.role !== 'admin') {
-    return <Navigate to="/monthly" replace />;
-  }
-  return children;
-}
-
 function AppRoutes() {
   return (
     <Routes>
@@ -55,9 +45,6 @@ function AppRoutes() {
               <Route path="/expenses" element={<Expenses />} />
               <Route path="/budgets" element={<Budgets />} />
               <Route path="/analytics" element={<Analytics />} />
-              <Route path="/monthly-responsibles" element={
-                <AdminRoute><MonthlyResponsibles /></AdminRoute>
-              } />
               <Route path="*" element={<Navigate to="/monthly" replace />} />
             </Routes>
           </DashboardLayout>

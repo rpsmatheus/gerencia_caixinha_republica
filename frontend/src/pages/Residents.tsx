@@ -8,9 +8,6 @@ import ActionButton from '../components/ActionButton';
 import Notification from '../components/Notification';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
-import { monthlyResponsibleAPI } from '../services/api';
-
-
 
 interface Resident {
   id: string;
@@ -35,7 +32,6 @@ export default function Residents() {
   const { canManageResidents } = usePermissions();
   const { resident: currentUser } = useAuth();
   const [residents, setResidents] = useState<Resident[]>([]);
-  const [responsibleIds, setResponsibleIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -50,20 +46,7 @@ export default function Residents() {
 
   useEffect(() => {
     loadResidents();
-    loadResponsibles();
   }, []);
-
-  const loadResponsibles = async () => {
-    try {
-      const now = new Date();
-      const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const res = await monthlyResponsibleAPI.list({ monthKey, isActive: true });
-      const ids = new Set(res.data.data.map((a) => a.residentId));
-      setResponsibleIds(ids);
-    } catch {
-      // silencioso — badge é informativo
-    }
-  };
 
   // BUG FIX: Usar limit=1000 para garantir que todos os moradores sejam retornados,
   // evitando que novos moradores fiquem invisíveis por causa da paginação padrão (limit=10).
@@ -281,11 +264,6 @@ export default function Residents() {
                 <div className="flex-1">
                   <h3 className={`font-bold ${textClass} text-lg truncate`}>{resident.fullName}</h3>
                   <p className="text-sm text-gray-600 truncate">@{resident.nickname}</p>
-                  {responsibleIds.has(resident.id) && (
-                    <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
-                      👑 Responsável do mês
-                    </span>
-                  )}
                 </div>
                 <span 
                   className="px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ml-2"
