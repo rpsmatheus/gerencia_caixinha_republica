@@ -16,6 +16,9 @@ dist/
 build/
 .cache/
 
+# Cobertura de testes
+coverage/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
