@@ -38,12 +38,9 @@ residentRoutes.get(
 
     const user = req.user!;
 
-    const filter =
-      user.role === 'admin'
-        ? {}
-        : { republicId: user.republicId };
-
-    const result = await residentRepo.findAll(filter, page, limit);
+    // Cada admin é dono de UMA república (criada no registro), não de todas —
+    // sem esse filtro, contas de repúblicas diferentes vazam dados entre si.
+    const result = await residentRepo.findAll({ republicId: user.republicId }, page, limit);
 
     res.json({ success: true, data: result.data.map(toResidentDTO), total: result.total });
   })
