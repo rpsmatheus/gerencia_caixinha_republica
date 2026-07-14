@@ -97,4 +97,4 @@ Script `src/database/seed.ts` (referenciado no `package.json` como `pnpm db:seed
 | Sprint 5 | Autenticação JWT | ⏳ Pendente |
 | Sprint 6 | Moradores (categorias) e RBAC | ⏳ Pendente |
 | Sprints 7–9 | Interface visual (React) | ⏳ Pendente |
-| Sprint 10 | Testes, refinamentos e entrega | ⏳ Pendente |
+| Sprint 10 | Testes, refinamentos e entrega | 🔄 Em andamento — 127 testes no backend + 28 no frontend, CI no GitHub Actions (ver [docs/testes.md](testes.md)) |
