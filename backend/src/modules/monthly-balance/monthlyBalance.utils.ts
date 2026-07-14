@@ -1,15 +1,19 @@
 import { IExpense } from '../../models/Expense.js';
 
 /**
- * Divide o total das despesas do mês entre os moradores ativos.
+ * Divide o total das despesas do mês pelo peso proporcional total dos
+ * moradores ativos (soma dos proportionalFactor, não a contagem de cabeças).
+ * Assim, quem saiu no meio do mês paga proporcionalmente menos e a diferença
+ * é redistribuída entre os demais — a soma de todas as cotas sempre fecha
+ * com o total das despesas (a "caixinha geral").
  */
 export function calculateMonthlyShare(
     expenses: IExpense[],
-    activeResidentCount: number
+    totalProportionalWeight: number
 ): number {
-    if (activeResidentCount <= 0) return 0;
+    if (totalProportionalWeight <= 0) return 0;
     const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-    return total / activeResidentCount;
+    return total / totalProportionalWeight;
 }
 
 /**

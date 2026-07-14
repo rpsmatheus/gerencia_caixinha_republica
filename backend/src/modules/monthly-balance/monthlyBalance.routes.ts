@@ -67,7 +67,11 @@ monthlyBalanceRoutes.get(
         });
 
         const activeThisMonth = monthResidents.filter((m) => m.isActive);
-        const monthlyShare = calculateMonthlyShare(expensesResult.data, activeThisMonth.length);
+        // Peso proporcional total: quem saiu no meio do mês entra como uma "fração de
+        // pessoa" na divisão, então a diferença que ele deixa de pagar é redistribuída
+        // entre os demais ativos — a soma das cotas sempre fecha com o total do mês.
+        const totalProportionalWeight = activeThisMonth.reduce((sum, m) => sum + m.proportionalFactor, 0);
+        const monthlyShare = calculateMonthlyShare(expensesResult.data, totalProportionalWeight);
 
         const balances = await Promise.all(
             monthResidents.map(async ({ resident, residentId, isActive, exitDay, proportionalFactor }) => {
