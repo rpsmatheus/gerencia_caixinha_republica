@@ -72,13 +72,4 @@ export class ResidentRepository implements IRepository<IResident> {
 
     return updated;
   }
-
-  async delete(id: string): Promise<void> {
-    const collection = this.getCollection();
-
-    await collection.updateOne(
-      { _id: new ObjectId(id) } as any,
-      { $set: { isActive: false, updatedAt: new Date() } }
-    );
-  }
 }

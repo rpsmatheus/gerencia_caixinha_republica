@@ -123,24 +123,6 @@ export default function Residents() {
     setShowForm(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (id === currentUser?.id) {
-      setError('Não é possível remover o seu próprio perfil.');
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-    if (!confirm('Tem certeza que deseja remover este morador?')) return;
-    try {
-      await api.delete(`/api/residents/${id}`);
-      setSuccess('Morador removido!');
-      await loadResidents();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao remover morador');
-      setTimeout(() => setError(null), 3000);
-    }
-  };
-
   const bgClass = 'bg-white';
   const textClass = 'text-gray-900';
   const borderClass = 'border-gray-200';
@@ -286,9 +268,6 @@ export default function Residents() {
               <div className="flex gap-2">
               {(canManageResidents || currentUser?.id === resident.id) && (
                 <ActionButton type="edit" onClick={() => handleEdit(resident)} className="flex-1" />
-              )}
-              {canManageResidents && resident.id !== currentUser?.id && (
-                <ActionButton type="delete" onClick={() => handleDelete(resident.id)} />
               )}
               </div>
             </div>

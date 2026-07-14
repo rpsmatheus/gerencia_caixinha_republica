@@ -82,9 +82,9 @@ residentRoutes.put(
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    // Nota: desativação/reativação passam por DELETE (soft delete), não por aqui —
-    // residentRepo.update() reconsulta com filtro isActive:true, então setar
-    // isActive:false neste patch faria a busca pós-update falhar.
+    // Não há remoção/desativação de morador — apagaria o histórico de
+    // pagamentos vinculado a ele. Ativação por mês é feita à parte, na
+    // Caixinha Mensal (PUT /monthly-balance/.../status), sem afetar o cadastro.
     const { fullName, nickname, phone, category } = req.body;
 
     const patch: Partial<IResident> = {};
@@ -111,20 +111,3 @@ residentRoutes.put(
   })
 );
 
-residentRoutes.delete(
-  '/:id',
-  authMiddleware,
-  authorize('admin'),
-  asyncHandler(async (req, res) => {
-    const user = req.user!;
-    const { id } = req.params;
-
-    if (user.id === id) {
-      return res.status(400).json({ error: 'Não é possível remover o seu próprio perfil.' });
-    }
-
-    await residentRepo.delete(id);
-
-    res.json({ success: true });
-  })
-);
