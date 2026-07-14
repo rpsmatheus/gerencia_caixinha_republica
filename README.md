@@ -15,17 +15,19 @@ Sistema web para gestão financeira de repúblicas estudantis. Automatiza a divi
 - [Rodar os testes](#rodar-os-testes)
 - [Endpoints da API](#endpoints-da-api)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Documentação](#documentação)
 - [Equipe](#equipe)
 
 ---
 
 ## Descrição
 
-O Caixinha App resolve o problema de gestão manual das despesas em repúblicas. O sistema permite:
+O Caixinha App resolve o problema de gestão manual das despesas em repúblicas. É **multi-tenant**: cada conta que se registra vira administradora de uma república isolada das demais, com login por JWT e permissões diferentes para admin e morador. O sistema permite:
 
-- Cadastrar moradores e controlar status ativo/inativo
-- Registrar despesas mensais por categoria (comuns e extras)
-- Calcular automaticamente quanto cada morador deve pagar
+- Cadastrar moradores e controlar sua categoria (Bixo/Agregado/Morador)
+- Registrar despesas mensais por categoria
+- Planejar orçamentos (avulsos ou a partir de modelos reutilizáveis) e aplicá-los como despesa real
+- Calcular automaticamente quanto cada morador deve pagar, com fator proporcional para quem entrou/saiu no meio do mês
 - Registrar pagamentos e acompanhar adimplência
 - Gerar relatórios consolidados do mês
 
@@ -37,9 +39,10 @@ O Caixinha App resolve o problema de gestão manual das despesas em repúblicas.
 |--------|-----------|
 | Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
 | Backend | Node.js + Express + TypeScript |
+| Autenticação | JWT (`jose`) + hash de senha com argon2 |
 | Banco de dados | MongoDB 7.0 |
 | Infraestrutura | Docker + Docker Compose |
-| Testes | Vitest |
+| Testes | Vitest (backend e frontend) + GitHub Actions (CI) |
 
 ---
 
@@ -71,8 +74,8 @@ docker compose up -d --build
 
 **4. Verifique que está funcionando**
 ```bash
-curl http://localhost:3001/api/residents
-# Esperado: {"success":true,"data":[],"total":0}
+curl http://localhost:3001/api/auth/login -X POST -H "Content-Type: application/json" -d '{"identifier":"x","password":"x"}'
+# Esperado: {"error":"Credenciais inválidas"} — API respondendo (401, não erro de conexão)
 ```
 
 Acesse o frontend em: `http://localhost:5173`
@@ -138,10 +141,10 @@ O backend sobe em `http://localhost:3001` e o frontend em `http://localhost:5173
 
 ## Rodar os testes
 
-Os testes ficam em `backend/tests/` e usam o Vitest. Não precisam de banco de dados — os repositories são mockados.
+Backend (`backend/tests/`) e frontend (`frontend/tests/`) usam Vitest. Nenhum dos dois precisa de banco de dados rodando — tudo é mockado (ver [docs/testes.md](docs/testes.md) para a estratégia completa).
 
 ```bash
-cd backend
+cd backend   # ou cd frontend
 
 # Instalar dependências (se ainda não instalou)
 pnpm install
@@ -159,38 +162,58 @@ pnpm test:coverage
 pnpm test tests/factories/ExpenseFactory.test.ts
 ```
 
+O CI (`.github/workflows/ci.yml`) roda typecheck + testes com cobertura + build para os dois lados em todo push/PR para `main`.
+
 ---
 
 ## Endpoints da API
 
-Base URL: `http://localhost:3001/api`
+Base URL: `http://localhost:3001/api`. Referência completa (payloads, respostas, códigos de erro) em [docs/api.md](docs/api.md) — resumo abaixo. 🔒 = exige `Authorization: Bearer <token>` (ver [docs/autenticacao-e-autorizacao.md](docs/autenticacao-e-autorizacao.md)).
+
+### Auth
+```
+POST   /auth/register          Cria conta admin + república nova
+POST   /auth/login             Login por nickname
+POST   /auth/logout
+GET    /auth/me                🔒
+POST   /auth/change-password   🔒
+```
 
 ### Moradores
 ```
-GET    /residents              Lista moradores (paginado)
-POST   /residents              Cria morador
-PUT    /residents/:id          Atualiza morador
-DELETE /residents/:id          Desativa morador (soft-delete)
+GET    /residents              🔒 Lista moradores (paginado)
+POST   /residents              🔒 admin — Cria morador
+PUT    /residents/:id          🔒 Atualiza morador (o próprio ou admin)
 ```
+> Não há `DELETE` — ver [docs/decisoes-tecnicas.md](docs/decisoes-tecnicas.md).
 
 ### Despesas
 ```
-GET    /expenses               Lista com filtros: ?category=&isExtra=&search=&startDate=&endDate=
-GET    /expenses/:id           Busca por ID
-POST   /expenses               Cria despesa
-PUT    /expenses/:id           Atualiza despesa
-DELETE /expenses/:id           Remove despesa
+GET    /expenses               🔒 Lista com filtros: ?category=&minAmount=&maxAmount=&search=&startDate=&endDate=
+GET    /expenses/:id           🔒 Busca por ID
+POST   /expenses               🔒 Cria despesa
+PUT    /expenses/:id           🔒 Atualiza despesa
+DELETE /expenses/:id           🔒 Remove despesa
 ```
 
 ### Categorias
 ```
-GET    /categories             Lista categorias disponíveis
+GET    /categories             🔒 Lista categorias da república
+POST   /categories             🔒 admin — Cria categoria
+DELETE /categories/:id         🔒 admin — Remove categoria
 ```
 
 ### Orçamentos
 ```
-GET    /budgets/:republicaId/:year/:month    Orçamento do mês
-POST   /budgets                              Cria orçamento
+GET    /budgets/templates              🔒 Modelos reutilizáveis
+POST   /budgets/templates              🔒 admin — Cria modelo
+DELETE /budgets/templates/:id          🔒 admin — Remove modelo
+GET    /budgets/:year/:month           🔒 Orçamentos planejados do mês
+POST   /budgets/:year/:month           🔒 admin — Cria orçamento avulso direto no mês
+POST   /budgets/simulate/:year/:month  🔒 admin — Instancia os modelos como orçamento do mês
+POST   /budgets/:id/apply              🔒 admin — Converte orçamento em despesa real
+PUT    /budgets/:id                    🔒 admin — Ajusta valor
+DELETE /budgets/:id                    🔒 admin — Remove
 ```
 
 ### Pagamentos
@@ -200,18 +223,23 @@ GET    /payments?month=YYYY-MM&residentId=  Pagamentos de um morador
 POST   /payments                            Registra pagamento
 DELETE /payments/:id                        Remove pagamento
 ```
+> Sem 🔒 — gap conhecido, ver [docs/andamento.md](docs/andamento.md).
 
 ### Fechamento Mensal
 ```
-GET    /monthly-balance?year=&month=              Saldos de todos os moradores
-GET    /monthly-balance/:residentId?year=&month=  Saldo individual
-POST   /monthly-balance/:residentId/payment       Registra pagamento e recalcula
+GET    /monthly-balance/:year/:month                           🔒 Painel do mês (saldo de todos)
+PUT    /monthly-balance/:year/:month/:residentId/status         🔒 admin — Ativa/inativa no mês
+PUT    /monthly-balance/:year/:month/:residentId/proportional   🔒 admin — Define dia de saída
+DELETE /monthly-balance/:year/:month/:residentId/proportional   🔒 admin — Remove cálculo proporcional
+POST   /monthly-balance/:year/:month/:residentId/payment        🔒 admin — Registra pagamento
+DELETE /monthly-balance/payment/:paymentId                      🔒 admin — Remove pagamento
 ```
 
 ### Relatórios
 ```
 GET    /reports/monthly?year=&month=    Relatório consolidado do mês
 ```
+> Sem 🔒 — mesmo gap de `payments`.
 
 ---
 
@@ -223,6 +251,28 @@ O arquivo `.env.example` documenta todas as variáveis necessárias:
 |----------|-----------|--------------|
 | `MONGODB_URI` | String de conexão com o MongoDB | `mongodb://admin:password@mongodb:27017/caixinha?authSource=admin` |
 | `PORT` | Porta do backend | `3001` |
+| `CORS_ORIGIN` | Origem permitida pelo CORS do backend | `http://localhost:5173` |
+| `VITE_API_URL` | URL da API consumida pelo frontend | `http://localhost:3001` |
+| `JWT_SECRET` | Segredo para assinar os JWTs (gerar com `openssl rand -hex 32`) | — |
+| `JWT_EXPIRES_IN` | Expiração do access token | `8h` |
+
+---
+
+## Documentação
+
+Documentação detalhada em [docs/](docs/):
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [architecture.md](docs/architecture.md) | Estrutura de pastas, camadas do backend, frontend, multi-tenancy e fluxo funcional completo |
+| [api.md](docs/api.md) | Referência completa de todos os endpoints |
+| [autenticacao-e-autorizacao.md](docs/autenticacao-e-autorizacao.md) | Fluxo JWT, RBAC e matriz de permissões |
+| [modelo-de-dados.md](docs/modelo-de-dados.md) | Entidades e a fórmula de cálculo da cota mensal |
+| [decisoes-tecnicas.md](docs/decisoes-tecnicas.md) | ADRs — o porquê de cada escolha de arquitetura |
+| [historias-de-usuario.md](docs/historias-de-usuario.md) | Histórias de usuário do projeto e status de implementação |
+| [contribuicao.md](docs/contribuicao.md) | Convenções de branch/commit e checklist de PR |
+| [testes.md](docs/testes.md) | Estratégia de testes automatizados |
+| [andamento.md](docs/andamento.md) | Progresso por sprint |
 
 ---
 
