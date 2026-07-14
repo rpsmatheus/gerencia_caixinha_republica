@@ -188,6 +188,41 @@ budgetRoutes.post(
 );
 
 /**
+ * POST /api/budgets/:year/:month
+ * Cria um orçamento avulso direto no mês, sem passar por um modelo —
+ * complementa "Simular Mês Padrão" para gastos que não são recorrentes.
+ * Precisa vir depois de /:id/apply: os dois são rotas POST de 2 segmentos
+ * ("/:id/apply" tem o segundo segmento literal "apply"), então registrar
+ * essa antes faria qualquer POST /:algo/apply cair aqui por engano.
+ */
+budgetRoutes.post(
+    '/:year/:month',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        const parsed = parseYearMonth(req);
+        if (!parsed) return res.status(400).json({ error: 'year e month inválidos' });
+        const { year, month } = parsed;
+        const user = req.user!;
+
+        const { description, category, amount } = req.body;
+        if (!description?.trim()) return res.status(400).json({ error: 'description é obrigatório' });
+        if (!category?.trim()) return res.status(400).json({ error: 'category é obrigatório' });
+        if (!amount || amount <= 0) return res.status(400).json({ error: 'amount inválido' });
+
+        const budget = await budgetRepo.create({
+            republicId: user.republicId,
+            year,
+            month,
+            description: description.trim(),
+            category,
+            amount,
+        });
+        res.status(201).json({ success: true, data: toBudgetDTO(budget) });
+    })
+);
+
+/**
  * PUT /api/budgets/:id
  * Ajusta o valor planejado de um orçamento.
  */
