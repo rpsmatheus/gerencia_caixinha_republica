@@ -29,8 +29,8 @@ function parseYearMonth(req: any): { year: number; month: number } | null {
 
 /**
  * GET /api/monthly-balance/:year/:month
- * Painel completo do mês: saldo de cada morador, despesas do mês, extras
- * cobrados do mês anterior e a cota por pessoa. Recalcula a cada chamada.
+ * Painel completo do mês: saldo de cada morador, despesas do mês e a cota
+ * por pessoa. Recalcula a cada chamada.
  */
 monthlyBalanceRoutes.get(
     '/:year/:month',
@@ -48,12 +48,10 @@ monthlyBalanceRoutes.get(
 
         const prevMonth = month === 1 ? 12 : month - 1;
         const prevYear = month === 1 ? year - 1 : year;
-        const prevRange = monthRange(prevYear, prevMonth);
 
-        const [residentsResult, expensesResult, prevExtrasResult, existingBalances] = await Promise.all([
+        const [residentsResult, expensesResult, existingBalances] = await Promise.all([
             residentRepo.findAll({ republicId: user.republicId }, 1, 1000),
             expenseRepo.findAll(user, 1, 10000, { startDate, endDate }),
-            expenseRepo.findAll(user, 1, 10000, { startDate: prevRange.startDate, endDate: prevRange.endDate, isExtra: true }),
             monthlyBalanceRepo.findByMonth(year, month),
         ]);
 
@@ -70,15 +68,13 @@ monthlyBalanceRoutes.get(
 
         const activeThisMonth = monthResidents.filter((m) => m.isActive);
         const monthlyShare = calculateMonthlyShare(expensesResult.data, activeThisMonth.length);
-        const extrasFromPrevious = prevExtrasResult.data.reduce((sum, e) => sum + e.amount, 0);
-        const extrasPerPerson = activeThisMonth.length > 0 ? extrasFromPrevious / activeThisMonth.length : 0;
 
         const balances = await Promise.all(
             monthResidents.map(async ({ resident, residentId, isActive, exitDay, proportionalFactor }) => {
                 const prevBalanceDoc = await monthlyBalanceRepo.findByResidentAndMonth(residentId, prevYear, prevMonth);
                 const previousBalance = prevBalanceDoc?.currentBalance ?? 0;
 
-                const currentMonthDue = isActive ? (monthlyShare + extrasPerPerson) * proportionalFactor : 0;
+                const currentMonthDue = isActive ? monthlyShare * proportionalFactor : 0;
                 const totalDue = previousBalance + currentMonthDue;
 
                 const payments = await paymentRepo.findByResidentAndMonth(residentId, monthKey);
@@ -139,9 +135,7 @@ monthlyBalanceRoutes.get(
                     category: e.category,
                     expenseDate: e.expenseDate,
                     amount: e.amount,
-                    isExtra: e.isExtra,
                 })),
-                extrasFromPrevious,
                 // Módulo de responsáveis mensais ainda não existe no backend
                 manager: null,
             },

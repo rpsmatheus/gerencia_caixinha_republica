@@ -1,18 +1,15 @@
 import { IExpense } from '../../models/Expense.js';
 
 /**
- * Divide o total das despesas COMUNS entre os moradores ativos.
- * Despesas extras (isExtra=true) NÃO entram nesta divisão.
+ * Divide o total das despesas do mês entre os moradores ativos.
  */
 export function calculateMonthlyShare(
     expenses: IExpense[],
     activeResidentCount: number
 ): number {
     if (activeResidentCount <= 0) return 0;
-    const commonTotal = expenses
-        .filter(e => !e.isExtra)
-        .reduce((sum, e) => sum + e.amount, 0);
-    return commonTotal / activeResidentCount;
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    return total / activeResidentCount;
 }
 
 /**

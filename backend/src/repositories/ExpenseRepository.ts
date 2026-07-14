@@ -29,10 +29,6 @@ export class ExpenseRepository {
       query.category = filters.category;
     }
 
-    if (filters.isExtra !== undefined) {
-      query.isExtra = filters.isExtra;
-    }
-
     if (filters.search) {
       query.description = {
         $regex: filters.search,

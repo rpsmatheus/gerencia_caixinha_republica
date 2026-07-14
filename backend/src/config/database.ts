@@ -107,7 +107,6 @@ export class DatabaseConnection {
       const expensesCollection = this.db.collection('expenses');
       await expensesCollection.createIndex({ expenseDate: -1 });
       await expensesCollection.createIndex({ category: 1 });
-      await expensesCollection.createIndex({ isExtra: 1 });
       await expensesCollection.createIndex({ createdAt: -1 });
 
       // Índices para MonthlyBalances

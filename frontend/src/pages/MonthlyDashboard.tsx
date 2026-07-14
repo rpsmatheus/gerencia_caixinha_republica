@@ -45,7 +45,6 @@ interface MonthlyData {
   perPersonAmount: number;
   balances: MonthlyBalance[];
   expenses: any[];
-  extrasFromPrevious: number;
   manager: { residentId: string; residentName: string } | null;
 }
 
@@ -215,16 +214,11 @@ export default function MonthlyDashboard() {
 
       {/* Stats */}
       {monthlyData && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-indigo-200 transition-all">
             <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Total do Mês</div>
             <div className="text-3xl font-black text-indigo-600 mt-2">R$ {monthlyData.totalExpenses.toFixed(2)}</div>
-            <p className="text-[10px] text-slate-400 font-bold mt-2">Normais + Extras Mês Passado</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-orange-200 transition-all">
-            <div className="text-slate-500 text-xs font-black uppercase tracking-widest">Extras Anterior</div>
-            <div className="text-3xl font-black text-orange-600 mt-2">R$ {monthlyData.extrasFromPrevious.toFixed(2)}</div>
-            <p className="text-[10px] text-slate-400 font-bold mt-2">Cobrados neste mês</p>
+            <p className="text-[10px] text-slate-400 font-bold mt-2">Despesas do mês</p>
           </div>
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl shadow-lg border-2 border-green-500 relative overflow-hidden">
             <div className="absolute top-2 right-2 text-3xl opacity-10">👥</div>
@@ -293,12 +287,7 @@ export default function MonthlyDashboard() {
                   {monthlyData.expenses.map(expense => (
                     <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-slate-900">{expense.description}</span>
-                          {expense.isExtra && (
-                            <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-orange-100 text-orange-800 border border-orange-200 uppercase">Extra</span>
-                          )}
-                        </div>
+                        <span className="font-black text-slate-900">{expense.description}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">{expense.category}</span>
@@ -313,7 +302,6 @@ export default function MonthlyDashboard() {
               </table>
             </div>
           </div>
-          <p className="text-xs text-slate-400 italic">* Despesas marcadas como "EXTRA" aparecem na lista do mês em que foram cadastradas, mas são cobradas apenas no mês seguinte.</p>
         </div>
       )}
     </div>

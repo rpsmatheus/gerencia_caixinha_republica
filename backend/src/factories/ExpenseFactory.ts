@@ -18,7 +18,6 @@ export class ExpenseFactory {
       amount: data.amount,
       expenseDate: new Date(data.expenseDate),
 
-      isExtra: data.isExtra ?? false,
       notes: data.notes?.trim(),
 
       proofUrl: undefined,

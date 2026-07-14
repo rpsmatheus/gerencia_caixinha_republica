@@ -130,7 +130,6 @@ export interface Expense {
   category: string;
   amount: number;
   expenseDate: string;
-  isExtra: boolean;
   proofUrl?: string;
   notes?: string;
   createdAt: string;
@@ -142,7 +141,6 @@ export interface CreateExpenseDTO {
   category: string;
   amount: number;
   expenseDate: string;
-  isExtra?: boolean;
   notes?: string;
 }
 

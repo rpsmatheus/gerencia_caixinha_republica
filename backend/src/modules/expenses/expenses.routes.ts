@@ -18,7 +18,6 @@ function toExpenseDTO(expense: IExpense) {
     // <input type="date"> exige exatamente YYYY-MM-DD — ISO completo com hora
     // faz o navegador descartar o valor silenciosamente ao editar.
     expenseDate: new Date(expense.expenseDate).toISOString().split('T')[0],
-    isExtra: expense.isExtra,
     notes: expense.notes ?? null,
     proofUrl: expense.proofUrl ?? null,
     createdAt: expense.createdAt,
@@ -42,9 +41,6 @@ expenseRoutes.get(
     // 🧠 FILTROS
     const filters = {
       category: req.query.category as any,
-      isExtra: req.query.isExtra
-        ? req.query.isExtra === 'true'
-        : undefined,
       minAmount: req.query.minAmount
         ? Number(req.query.minAmount)
         : undefined,
@@ -134,14 +130,13 @@ expenseRoutes.put(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    const { description, category, amount, expenseDate, isExtra, notes } = req.body;
+    const { description, category, amount, expenseDate, notes } = req.body;
 
     const patch: Record<string, unknown> = {};
     if (description !== undefined) patch.description = description;
     if (category !== undefined) patch.category = category;
     if (amount !== undefined) patch.amount = amount;
     if (expenseDate !== undefined) patch.expenseDate = new Date(expenseDate);
-    if (isExtra !== undefined) patch.isExtra = isExtra;
     if (notes !== undefined) patch.notes = notes;
 
     const updated = await expenseRepo.update(req.params.id, patch, user);

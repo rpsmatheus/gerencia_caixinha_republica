@@ -32,7 +32,7 @@ export function ValueInput({
 }
 
 interface ActionButtonProps {
-  type: 'edit' | 'delete' | 'add' | 'attach' | 'category' | 'extra' | 'expense';
+  type: 'edit' | 'delete' | 'add' | 'attach' | 'category' | 'expense';
   onClick?: () => void;
   title?: string;
   disabled?: boolean;
@@ -65,11 +65,6 @@ const getButtonConfig = (type: ActionButtonProps['type']) => {
     category: {
       emoji: '+',
       text: 'Categoria',
-      bgColor: 'bg-blue-600 hover:bg-blue-700',
-    },
-    extra: {
-      emoji: '+',
-      text: 'Extra',
       bgColor: 'bg-blue-600 hover:bg-blue-700',
     },
     expense: {

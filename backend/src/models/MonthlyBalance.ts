@@ -175,9 +175,6 @@ export interface IMonthlyReport {
   /** Quantidade de despesas */
   expenseCount: number;
 
-  /** Despesas extras do mês anterior */
-  previousExtras: number;
-
   /** Saldos de cada morador */
   balances: IMonthlyBalance[];
 
