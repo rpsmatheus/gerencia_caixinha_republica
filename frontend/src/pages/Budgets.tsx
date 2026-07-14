@@ -205,7 +205,7 @@ export default function Budgets() {
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Orçamentos Mensais</h1>
           <p className="text-slate-500 font-medium mt-2">Simule e planeje os gastos da república</p>
         </div>
-        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <Button
             variant="secondary"
             size="lg"
@@ -226,13 +226,10 @@ export default function Budgets() {
           </Button>
           <Button
             variant="primary"
-            size="lg"
             icon="+"
             onClick={() => setShowAddBudgetForm(true)}
-            fullWidth
-          >
-            Adicionar Orçamento
-          </Button>
+            title="Adicionar Orçamento"
+          />
         </div>
       </div>
 
