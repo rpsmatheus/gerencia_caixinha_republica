@@ -26,7 +26,7 @@ interface AuthContextType {
   mustChangePassword: boolean;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
-  register: (nickname: string, fullName: string, password: string) => Promise<void>;
+  register: (nickname: string, password: string) => Promise<void>;
   logout: () => void;
   updateResident: (patch: Partial<AuthResident>) => void;
 }
@@ -78,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistSession(token, loggedResident);
   }, [persistSession]);
 
-  const register = useCallback(async (nickname: string, fullName: string, password: string) => {
-    const { accessToken: token, resident: newResident } = await apiRegister(nickname, fullName, password);
+  const register = useCallback(async (nickname: string, password: string) => {
+    const { accessToken: token, resident: newResident } = await apiRegister(nickname, password);
     persistSession(token, newResident);
   }, [persistSession]);
 

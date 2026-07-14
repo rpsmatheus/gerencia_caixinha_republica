@@ -9,7 +9,7 @@ import { useAuth } from './contexts/AuthContext';
 export default function Landing() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [formData, setFormData] = useState({ identifier: '', password: '', nickname: '', fullName: '' });
+  const [formData, setFormData] = useState({ identifier: '', password: '', nickname: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function Landing() {
 
     try {
       if (mode === 'register') {
-        await register(formData.nickname, formData.fullName, formData.password);
+        await register(formData.nickname, formData.password);
       } else {
         await login(formData.identifier, formData.password);
       }
@@ -305,22 +305,10 @@ export default function Landing() {
             </p>
             <form onSubmit={handleAuth} className="space-y-4">
 
-              {mode === 'register' && (
-                <input
-                  type="text"
-                  required
-                  placeholder="Seu nome completo"
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium text-base text-slate-900"
-                  value={formData.fullName}
-                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                  autoComplete="name"
-                />
-              )}
-
               <input
                 type="text"
                 required
-                placeholder={mode === 'register' ? 'Escolha um apelido' : 'Apelido'}
+                placeholder={mode === 'register' ? 'Escolha um usuário' : 'Usuário'}
                 className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium text-base text-slate-900"
                 value={mode === 'register' ? formData.nickname : formData.identifier}
                 onChange={e =>

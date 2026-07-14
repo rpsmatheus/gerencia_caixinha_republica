@@ -27,10 +27,10 @@ function toAuthResident(user: IResident) {
 authRoutes.post(
   '/register',
   asyncHandler(async (req, res) => {
-    const { nickname, fullName, password } = req.body;
+    const { nickname, password } = req.body;
 
-    if (!nickname || !fullName || !password) {
-      return res.status(400).json({ error: 'nickname, fullName e password são obrigatórios' });
+    if (!nickname || !password) {
+      return res.status(400).json({ error: 'usuário e senha são obrigatórios' });
     }
 
     if (password.length < 6) {
@@ -39,16 +39,19 @@ authRoutes.post(
 
     const existing = await residentRepo.findByNicknameWithPassword(nickname);
     if (existing) {
-      return res.status(409).json({ error: 'Apelido já está em uso' });
+      return res.status(409).json({ error: 'Usuário já está em uso' });
     }
 
     const passwordHash = await argon2.hash(password);
 
+    // Quem se registra é o administrador da república, não um morador —
+    // não entra em Moradores nem na Caixinha Mensal (ver filtro role:'resident'
+    // nas rotas de residents/monthly-balance/budgets).
     let resident: IResident;
     try {
       resident = await residentRepo.save({
         nickname: nickname.toLowerCase(),
-        fullName,
+        fullName: nickname,
         role: 'admin',
         republicId: randomUUID(),
         passwordHash,
@@ -60,7 +63,7 @@ authRoutes.post(
       } as IResident);
     } catch (err: any) {
       if (err?.code === 11000) {
-        return res.status(409).json({ error: 'Apelido já está em uso' });
+        return res.status(409).json({ error: 'Usuário já está em uso' });
       }
       throw err;
     }

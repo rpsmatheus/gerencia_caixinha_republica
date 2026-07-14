@@ -93,7 +93,8 @@ budgetRoutes.get(
 
         const [budgets, residentsResult] = await Promise.all([
             budgetRepo.findByMonth(user.republicId, year, month),
-            residentRepo.findAll({ republicId: user.republicId }, 1, 1000),
+            // role:'resident' exclui o admin — ele não é morador da caixinha.
+            residentRepo.findAll({ republicId: user.republicId, role: 'resident' }, 1, 1000),
         ]);
 
         const budgetsTotal = budgets.reduce((sum, b) => sum + b.amount, 0);

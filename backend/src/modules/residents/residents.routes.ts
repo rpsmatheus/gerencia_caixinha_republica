@@ -40,7 +40,8 @@ residentRoutes.get(
 
     // Cada admin é dono de UMA república (criada no registro), não de todas —
     // sem esse filtro, contas de repúblicas diferentes vazam dados entre si.
-    const result = await residentRepo.findAll({ republicId: user.republicId }, page, limit);
+    // role:'resident' exclui o próprio admin — ele não é um morador da caixinha.
+    const result = await residentRepo.findAll({ republicId: user.republicId, role: 'resident' }, page, limit);
 
     res.json({ success: true, data: result.data.map(toResidentDTO), total: result.total });
   })

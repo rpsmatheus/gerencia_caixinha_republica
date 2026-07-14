@@ -50,7 +50,8 @@ monthlyBalanceRoutes.get(
         const prevYear = month === 1 ? year - 1 : year;
 
         const [residentsResult, expensesResult, existingBalances] = await Promise.all([
-            residentRepo.findAll({ republicId: user.republicId }, 1, 1000),
+            // role:'resident' exclui o admin — ele não é morador da caixinha.
+            residentRepo.findAll({ republicId: user.republicId, role: 'resident' }, 1, 1000),
             expenseRepo.findAll(user, 1, 10000, { startDate, endDate }),
             monthlyBalanceRepo.findByMonth(year, month),
         ]);
