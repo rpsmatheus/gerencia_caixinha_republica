@@ -20,7 +20,7 @@ export class ExpenseFactory {
 
       notes: data.notes?.trim(),
 
-      proofUrl: undefined,
+      proofUrl: data.proofUrl?.trim() || undefined,
 
       createdAt: now,
       updatedAt: now,

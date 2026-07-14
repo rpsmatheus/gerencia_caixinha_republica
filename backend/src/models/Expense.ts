@@ -72,6 +72,9 @@ export interface ICreateExpenseDTO {
 
   /** Notas adicionais */
   notes?: string;
+
+  /** URL externa do comprovante */
+  proofUrl?: string;
 }
 
 /**

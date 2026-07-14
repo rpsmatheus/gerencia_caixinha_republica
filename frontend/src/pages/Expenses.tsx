@@ -31,6 +31,10 @@ const MONTHS_LABELS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+function isImageProofUrl(url: string) {
+  return /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+}
+
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -55,6 +59,7 @@ export default function Expenses() {
     category: '',
     amount: 0,
     expenseDate: new Date().toISOString().split('T')[0],
+    proofUrl: '',
   });
 
   useEffect(() => {
@@ -140,6 +145,7 @@ export default function Expenses() {
         category: formData.category || (categories.length > 0 ? categories[0].name : ''),
         amount: 0,
         expenseDate: new Date().toISOString().split('T')[0],
+        proofUrl: '',
       });
       setShowForm(false);
       await loadData();
@@ -158,6 +164,7 @@ export default function Expenses() {
       category: expense.category,
       amount: expense.amount,
       expenseDate: expense.expenseDate,
+      proofUrl: expense.proofUrl || '',
     });
     setShowEditModal(true);
   };
@@ -338,8 +345,8 @@ export default function Expenses() {
                             variant="icon"
                             size="sm"
                             icon="📎"
-                            title="Anexar comprovante (em breve)"
-                            disabled
+                            onClick={() => handleEditExpense(expense)}
+                            title="Adicionar URL do comprovante"
                           />
                         )}
                         <Button
@@ -413,6 +420,16 @@ export default function Expenses() {
                   value={formData.expenseDate}
                   onChange={e => setFormData({ ...formData, expenseDate: e.target.value })}
                   className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">URL do comprovante</label>
+                <input
+                  type="url"
+                  value={formData.proofUrl}
+                  onChange={e => setFormData({ ...formData, proofUrl: e.target.value })}
+                  className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 bg-white text-slate-900 font-bold"
+                  placeholder="https://..."
                 />
               </div>
               <div className="flex gap-3 pt-6">
@@ -502,8 +519,18 @@ export default function Expenses() {
                 ✕
               </button>
             </div>
-            <div className="p-6">
-              <img src={viewingProof} alt="Comprovante" className="w-full rounded-xl" />
+            <div className="p-6 space-y-4">
+              <a
+                href={viewingProof}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors"
+              >
+                Abrir arquivo
+              </a>
+              {isImageProofUrl(viewingProof) && (
+                <img src={viewingProof} alt="Comprovante" className="w-full rounded-xl" />
+              )}
             </div>
           </div>
         </div>

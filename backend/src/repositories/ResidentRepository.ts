@@ -22,6 +22,18 @@ export class ResidentRepository implements IRepository<IResident> {
       ...filter
     };
 
+    if (filter.search) {
+      const searchRegex = {
+        $regex: filter.search,
+        $options: 'i',
+      };
+      delete (query as any).search;
+      (query as any).$or = [
+        { fullName: searchRegex },
+        { nickname: searchRegex },
+      ];
+    }
+
     const data = await collection
       .find(query, { projection: { passwordHash: 0 } })
       .skip(skip)

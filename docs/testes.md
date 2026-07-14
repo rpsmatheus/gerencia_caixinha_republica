@@ -75,7 +75,7 @@ Para rotas protegidas, `authMiddleware` também é mockado: em vez de verificar 
 | `tests/modules/monthlyBalance.routes.test.ts` | `monthly-balance` | divisão igualitária, **redistribuição da cota de quem está inativo no mês**, saldo anterior + pagamentos no cálculo do saldo restante, status/proporcional/pagamento |
 | `tests/modules/budgets.routes.test.ts` | `budgets` | modelos (templates), simulação idempotente por descrição, aplicar orçamento como despesa real (404/409), atualizar e remover |
 
-**Resultado:** 81 testes de integração + 46 unitários = **127 testes**, 13 arquivos. Módulos de rota entre 94% e 100% de cobertura (o que falta é código dentro dos mocks — `authMiddleware.ts`, `database.ts`, corpo interno dos repositories — que não deve mesmo ser exercitado aqui).
+**Resultado:** 89 testes de integração + 46 unitários = **135 testes**, 13 arquivos. Módulos de rota entre 94% e 100% de cobertura (o que falta é código dentro dos mocks — `authMiddleware.ts`, `database.ts`, corpo interno dos repositories — que não deve mesmo ser exercitado aqui).
 
 ### Gaps reais encontrados durante os testes (não corrigidos, fora do escopo desta tarefa)
 
@@ -87,7 +87,7 @@ Para rotas protegidas, `authMiddleware` também é mockado: em vez de verificar 
 
 ```bash
 cd backend
-pnpm test                          # todos os 127 testes
+pnpm test                          # todos os 135 testes
 pnpm test tests/modules/            # só os testes de integração de rotas
 pnpm test:coverage
 ```
@@ -112,8 +112,9 @@ Antes desta fase o `frontend/package.json` não tinha nenhuma ferramenta de test
 | `tests/components/ActionButton.test.tsx` | `src/components/ActionButton.tsx` | modo emoji-only vs. `showText`, `onClick`, `disabled`, `title` customizado |
 | `tests/components/Notification.test.tsx` | `src/components/Notification.tsx` | auto-dismiss via `onClose` após `duration` (timers falsos), duração padrão de 3000ms |
 | `tests/components/ResidentCard.test.tsx` | `src/components/ResidentCard.tsx` | badge Ativo/Inativo, botões condicionais por prop, `onDelete` só dispara após confirmação (`window.confirm` mockado) |
+| `tests/pages/Residents.test.tsx` | `src/pages/Residents.tsx` | busca visível na listagem, e busca/lista escondidas durante criação ou edição de morador — `services/api.ts`, `useAuth` e `usePermissions` mockados |
 
-**Resultado:** 28 testes, 6 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. Páginas (`Residents`, `Expenses`, `MonthlyDashboard` etc.) e `services/api.ts` continuam sem testes — ver "não implementado" abaixo.
+**Resultado:** 30 testes, 7 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. `Residents` já tem teste de página pontual; `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics` e `services/api.ts` continuam sem testes dedicados — ver "não implementado" abaixo.
 
 ### Como rodar
 
@@ -126,7 +127,7 @@ pnpm test:coverage
 
 ### Não implementado nesta fase
 
-Mockar `services/api.ts` para testar as páginas (`Residents`, `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics`) foi deixado de fora — são componentes grandes (300–500 linhas) com bastante estado local, e o retorno maior nesta rodada estava em cobrir a lógica de autorização/sessão e os componentes reutilizados em todas as telas. Fica como próximo passo natural.
+Mockar `services/api.ts` para testar todas as páginas grandes foi deixado parcialmente de fora: `Residents` ganhou cobertura pontual para busca e modo de formulário, mas `Expenses`, `MonthlyDashboard`, `Budgets` e `Analytics` ainda não têm testes dedicados — são componentes grandes (300–500 linhas) com bastante estado local, e o retorno maior nesta rodada estava em cobrir a lógica de autorização/sessão e os componentes reutilizados em todas as telas. Fica como próximo passo natural.
 
 ## Fase 4 — CI ✅
 

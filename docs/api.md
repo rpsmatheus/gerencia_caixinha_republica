@@ -44,7 +44,7 @@ Body: `{ currentPassword, newPassword }`.
 ## Residents — `/api/residents`
 
 ### `GET /residents` 🔒 `[admin, resident]`
-Query: `page`, `limit` (padrão 1/10). Lista só moradores (`role: 'resident'`) da república do usuário — o admin nunca aparece na lista.
+Query: `page`, `limit` (padrão 1/10), `search` (busca parcial por `fullName` ou `nickname`). Lista só moradores (`role: 'resident'`) da república do usuário — o admin nunca aparece na lista.
 `200` → `{ success: true, data: Resident[], total }`.
 
 ### `POST /residents` 🔒 `[admin]`
@@ -76,18 +76,18 @@ Query: `page`, `limit`, `category`, `minAmount`, `maxAmount`, `search` (parcial 
 `200` → `{ success: true, data: Expense }` · `404` se não encontrado.
 
 ### `POST /expenses`
-Body: `{ description, category, amount, expenseDate, notes? }`.
+Body: `{ description, category, amount, expenseDate, notes?, proofUrl? }`.
 `201` → `{ success: true, data: Expense }`.
 > Erros de validação da factory (`description`/`amount`/`category`/`expenseDate` ausentes, `amount <= 0`) **não viram 400** hoje — chegam ao handler padrão do Express e retornam `500` (gap documentado em [docs/andamento.md](andamento.md)).
 
 ### `PUT /expenses/:id`
-Body: qualquer subconjunto de `{ description, category, amount, expenseDate, notes }`.
+Body: qualquer subconjunto de `{ description, category, amount, expenseDate, notes, proofUrl }`.
 `200` → `{ success: true, data: Expense }` · `404` se não encontrado.
 
 ### `DELETE /expenses/:id`
 `200` → `{ success: true, message: "Despesa removida com sucesso" }`.
 
-**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, proofUrl, createdAt, updatedAt }`. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
+**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, proofUrl, createdAt, updatedAt }`. `proofUrl` guarda uma URL externa do comprovante (Drive, S3, imagem ou PDF); o projeto não armazena o arquivo binário. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
 
 ---
 

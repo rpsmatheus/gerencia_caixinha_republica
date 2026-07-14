@@ -32,6 +32,7 @@ export default function Residents() {
   const { canManageResidents } = usePermissions();
   const { resident: currentUser } = useAuth();
   const [residents, setResidents] = useState<Resident[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -45,16 +46,21 @@ export default function Residents() {
   });
 
   useEffect(() => {
-    loadResidents();
-  }, []);
+    const timeout = setTimeout(() => {
+      loadResidents(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
 
   // BUG FIX: Usar limit=1000 para garantir que todos os moradores sejam retornados,
   // evitando que novos moradores fiquem invisíveis por causa da paginação padrão (limit=10).
-  const loadResidents = async () => {
+  const loadResidents = async (search = searchTerm) => {
     try {
       setLoading(true);
+      const trimmedSearch = search.trim();
       const res = await api.get('/api/residents', {
-        params: { limit: 1000, page: 1 },
+        params: { limit: 1000, page: 1, ...(trimmedSearch ? { search: trimmedSearch } : {}) },
       });
       // A API retorna { success, data, pagination }
       const data = res.data?.data ?? res.data;
@@ -144,6 +150,33 @@ export default function Residents() {
       {error && <Notification type="error" message={error} onClose={() => setError(null)} />}
       {success && <Notification type="success" message={success} onClose={() => setSuccess(null)} />}
 
+      {!showForm && (
+        <div className={`${bgClass} p-4 rounded-lg shadow-sm border ${borderClass}`}>
+          <label htmlFor="resident-search" className={`block text-sm font-medium  mb-2`}>
+            Buscar por nome ou apelido
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="resident-search"
+              type="search"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${inputClass}`}
+              placeholder="Ex: João ou joao"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Form Modal */}
       {showForm && (
         <div className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass} space-y-4`}>
@@ -231,14 +264,14 @@ export default function Residents() {
       )}
 
       {/* Loading */}
-      {loading && (
+      {!showForm && loading && (
         <div className={`${bgClass} p-8 rounded-lg shadow-sm text-center border ${borderClass}`}>
           <p className="text-gray-600">Carregando moradores...</p>
         </div>
       )}
 
       {/* Residents Grid */}
-      {!loading && residents.length > 0 && (
+      {!showForm && !loading && residents.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {residents.map(resident => (
             <div key={resident.id} className={`${bgClass} p-6 rounded-lg shadow-sm border ${borderClass} hover:shadow-md transition-shadow`}>
@@ -276,11 +309,15 @@ export default function Residents() {
       )}
 
       {/* Empty State */}
-      {!loading && residents.length === 0 && (
+      {!showForm && !loading && residents.length === 0 && (
         <div className={`${bgClass} p-12 rounded-lg shadow-sm text-center border ${borderClass}`}>
           <div className="text-4xl mb-4 text-indigo-600">◆</div>
-          <h3 className={`text-lg font-semibold ${textClass}`}>Nenhum morador registrado</h3>
-          <p className="text-gray-600">Comece adicionando um novo morador</p>
+          <h3 className={`text-lg font-semibold ${textClass}`}>
+            {searchTerm.trim() ? 'Nenhum morador encontrado' : 'Nenhum morador registrado'}
+          </h3>
+          <p className="text-gray-600">
+            {searchTerm.trim() ? 'Tente buscar por outro nome ou apelido' : 'Comece adicionando um novo morador'}
+          </p>
         </div>
       )}
     </div>

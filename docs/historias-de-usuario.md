@@ -16,7 +16,7 @@ Lista de histórias de usuário do Caixinha App e o status real de implementaç�
 |---|----------|:------:|------------|
 | 1 | Como admin, quero cadastrar um morador, para controlar quem mora na república. | ✅ | `POST /api/residents` |
 | 2 | Como usuário, quero visualizar a lista de moradores, para saber quem faz parte da república. | ✅ | `GET /api/residents` |
-| 3 | Como usuário, quero buscar um morador pelo nome/apelido, para encontrá-lo rapidamente numa lista grande. | ❌ | Não implementado — a tela de Moradores não tem campo de busca nem o backend aceita filtro de texto nessa rota. |
+| 3 | Como usuário, quero buscar um morador pelo nome/apelido, para encontrá-lo rapidamente numa lista grande. | ✅ | `GET /api/residents?search=` filtra por nome completo ou apelido; a tela de Moradores tem campo de busca com debounce. |
 | 4 | Como usuário, quero editar os dados de um morador, para manter o cadastro atualizado. | ✅ | `PUT /api/residents/:id` — o próprio morador edita a si mesmo; admin edita qualquer um. |
 | 5 | Como admin, quero ativar/desativar um morador, para controlar quem está contando na divisão da caixinha. | ⚠️ | **Erro de modelagem original**: a história foi escrita pensando em ativar/desativar o *cadastro* do morador globalmente, mas isso nunca fez sentido de verdade — desativar globalmente apagaria a referência para o histórico de pagamentos dele. O que existe de fato é ativar/desativar **por mês** (história 18), que é o comportamento correto. A lição foi: essa história deveria ter nascido já como "por mês", não como um toggle global. |
 | 6 | Como admin, quero excluir um morador, para remover alguém que saiu definitivamente da república. | ❌ | Removido de propósito — excluir apagaria o histórico financeiro (pagamentos e saldos) vinculado ao morador. Ver [decisoes-tecnicas.md](decisoes-tecnicas.md#sem-exclusão-nem-desativação-de-morador). |
@@ -32,7 +32,7 @@ Lista de histórias de usuário do Caixinha App e o status real de implementaç�
 | 11 | Como usuário, quero excluir uma despesa, para remover um lançamento indevido. | ✅ | `DELETE /api/expenses/:id` |
 | 12 | Como admin, quero gerenciar categorias de despesa, para organizar os gastos como a república preferir. | ✅ | `GET/POST/DELETE /api/categories`, customizadas por república. |
 | 13 | Como usuário, quero marcar uma despesa como "extra" (fora da divisão padrão), para separar gastos individuais dos coletivos. | ❌ | Removido — decidimos que era uma regra de negócio específica demais para um app que queremos manter genérico; hoje toda despesa listada entra igualmente no cálculo da cota mensal. |
-| 14 | Como usuário, quero anexar o comprovante de uma despesa (upload), para guardar prova do gasto. | ❌ | Não implementado — não temos servidor de arquivos (S3/Drive) no projeto. O modelo já reserva um campo `proofUrl` para uma URL externa, mas nada no frontend usa isso hoje. |
+| 14 | Como usuário, quero anexar o comprovante de uma despesa (upload), para guardar prova do gasto. | ✅ | Implementado como URL externa em `proofUrl`: o usuário informa o link do arquivo/imagem/PDF no cadastro ou edição da despesa e pode abrir/visualizar depois. O projeto não hospeda binários. |
 | 15 | Como usuário, quero visualizar um resumo das despesas, para entender o total gasto rapidamente. | ✅ | Resumo por categoria em `GET /api/reports/monthly` e nos gráficos de Analytics. |
 
 ## Fechamento Mensal
@@ -82,9 +82,9 @@ Lista de histórias de usuário do Caixinha App e o status real de implementaç�
 
 | Status | Quantidade |
 |--------|:----------:|
-| ✅ Implementado | 27 |
+| ✅ Implementado | 29 |
 | ⚠️ Implementado parcialmente | 1 |
-| ❌ Não implementado | 3 |
+| ❌ Não implementado | 1 |
 | **Total** | **31** |
 
 Detalhes técnicos de cada módulo em [architecture.md](architecture.md) e [api.md](api.md); o progresso por sprint está em [andamento.md](andamento.md).

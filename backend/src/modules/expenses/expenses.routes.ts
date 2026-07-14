@@ -130,7 +130,7 @@ expenseRoutes.put(
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    const { description, category, amount, expenseDate, notes } = req.body;
+    const { description, category, amount, expenseDate, notes, proofUrl } = req.body;
 
     const patch: Record<string, unknown> = {};
     if (description !== undefined) patch.description = description;
@@ -138,6 +138,7 @@ expenseRoutes.put(
     if (amount !== undefined) patch.amount = amount;
     if (expenseDate !== undefined) patch.expenseDate = new Date(expenseDate);
     if (notes !== undefined) patch.notes = notes;
+    if (proofUrl !== undefined) patch.proofUrl = proofUrl ? String(proofUrl).trim() : undefined;
 
     const updated = await expenseRepo.update(req.params.id, patch, user);
 

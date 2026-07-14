@@ -93,6 +93,21 @@ describe('GET /api/residents', () => {
 
     expect(res.status).toBe(200);
   });
+
+  it('repassa busca por nome ou apelido para o repository', async () => {
+    residentRepoMock.findAll.mockResolvedValue({ data: [], total: 0 });
+
+    const res = await request(app)
+      .get('/api/residents?search=fulano')
+      .set(authHeader({ id: ADMIN_ID, role: 'admin', republicId: 'republic-1' }));
+
+    expect(res.status).toBe(200);
+    expect(residentRepoMock.findAll).toHaveBeenCalledWith(
+      { republicId: 'republic-1', role: 'resident', search: 'fulano' },
+      1,
+      10
+    );
+  });
 });
 
 describe('POST /api/residents', () => {

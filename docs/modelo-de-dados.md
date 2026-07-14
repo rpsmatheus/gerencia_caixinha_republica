@@ -42,7 +42,7 @@ Representa tanto o admin de uma república quanto seus moradores — diferenciad
 | `category` | string | Um dos valores de `ExpenseCategory` ou uma categoria customizada (ver `Category`) |
 | `amount` | number | > 0 |
 | `expenseDate` | Date | |
-| `proofUrl` | string? | Reservado para comprovante (Drive/S3) — não implementado no frontend ainda |
+| `proofUrl` | string? | URL externa do comprovante (Drive/S3/imagem/PDF), informada no cadastro/edição da despesa |
 | `notes` | string? | |
 | `createdAt`, `updatedAt` | Date | |
 

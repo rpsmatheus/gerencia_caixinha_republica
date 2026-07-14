@@ -134,6 +134,24 @@ describe('POST /api/expenses', () => {
     expect(res.body.data.description).toBe('Internet');
   });
 
+  it('cria despesa com URL de comprovante', async () => {
+    expenseRepoMock.save.mockImplementation(async (e: any) => ({ ...e, _id: new ObjectId(EXPENSE_ID) }));
+
+    const res = await request(app)
+      .post('/api/expenses')
+      .set(authHeader())
+      .send({
+        description: 'Internet',
+        category: 'Internet',
+        amount: 100,
+        expenseDate: '2026-06-05',
+        proofUrl: 'https://example.com/comprovante.pdf',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.proofUrl).toBe('https://example.com/comprovante.pdf');
+  });
+
   it('propaga o erro de validação da factory (sem handler de erro customizado)', async () => {
     const res = await request(app)
       .post('/api/expenses')
@@ -170,6 +188,23 @@ describe('PUT /api/expenses/:id', () => {
     expect(expenseRepoMock.update).toHaveBeenCalledWith(
       EXPENSE_ID,
       { amount: 200 },
+      { id: 'user-1', role: 'admin', republicId: 'republic-1' }
+    );
+  });
+
+  it('atualiza a URL do comprovante', async () => {
+    expenseRepoMock.update.mockResolvedValue(makeExpense({ proofUrl: 'https://example.com/nota.png' }));
+
+    const res = await request(app)
+      .put(`/api/expenses/${EXPENSE_ID}`)
+      .set(authHeader())
+      .send({ proofUrl: ' https://example.com/nota.png ' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.proofUrl).toBe('https://example.com/nota.png');
+    expect(expenseRepoMock.update).toHaveBeenCalledWith(
+      EXPENSE_ID,
+      { proofUrl: 'https://example.com/nota.png' },
       { id: 'user-1', role: 'admin', republicId: 'republic-1' }
     );
   });
