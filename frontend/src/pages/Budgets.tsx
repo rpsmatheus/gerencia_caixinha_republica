@@ -211,6 +211,7 @@ export default function Budgets() {
             size="lg"
             icon="🧾"
             onClick={() => setShowTemplateForm(!showTemplateForm)}
+            className="whitespace-nowrap"
             fullWidth
           >
             Modelos
@@ -220,6 +221,7 @@ export default function Budgets() {
             size="lg"
             icon="📊"
             onClick={handleSimulate}
+            className="whitespace-nowrap"
             fullWidth
           >
             Simular Mês Padrão
@@ -229,6 +231,7 @@ export default function Budgets() {
             icon="+"
             onClick={() => setShowAddBudgetForm(true)}
             title="Adicionar Orçamento"
+            className="!w-12 !h-12 !rounded-xl shrink-0"
           />
         </div>
       </div>
