@@ -40,6 +40,9 @@ export class MonthlyBalanceRepository {
             totalDue: data.totalDue ?? 0,
             amountPaid: data.amountPaid ?? 0,
             currentBalance: data.currentBalance ?? 0,
+            isActive: data.isActive ?? true,
+            exitDay: data.exitDay ?? null,
+            proportionalFactor: data.proportionalFactor ?? 1,
             createdAt: now,
             updatedAt: now,
         };

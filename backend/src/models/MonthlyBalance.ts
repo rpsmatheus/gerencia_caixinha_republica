@@ -37,6 +37,15 @@ export interface IMonthlyBalance {
   /** Saldo atual (total devido - pago) */
   currentBalance: number;
 
+  /** Se o morador está ativo NESTE mês específico (independe do isActive global da conta) */
+  isActive?: boolean;
+
+  /** Dia do mês em que o morador saiu, para cálculo proporcional (null = mês inteiro) */
+  exitDay?: number | null;
+
+  /** Fator proporcional aplicado à cota (exitDay / dias do mês; 1 = mês inteiro) */
+  proportionalFactor?: number;
+
   /** URL do comprovante de pagamento */
   paymentProofUrl?: string;
 

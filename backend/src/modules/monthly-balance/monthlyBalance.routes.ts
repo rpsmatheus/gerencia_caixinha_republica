@@ -1,137 +1,270 @@
 import { Router } from 'express';
 import { PaymentFactory } from '../../factories/PaymentFactory.js';
 import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
+import { authMiddleware } from '../../shared/middlewares/authMiddleware.js';
+import { authorize } from '../../shared/middlewares/authorize.js';
 import { monthlyBalanceRepo, expenseRepo, residentRepo, paymentRepo } from '../../app/appContext.js';
-import { calculateMonthlyShare, calculateCurrentBalance, toMonthKey } from './monthlyBalance.utils.js';
+import {
+    calculateMonthlyShare,
+    toMonthKey,
+    daysInMonth,
+    computeProportionalFactor,
+} from './monthlyBalance.utils.js';
 
 export const monthlyBalanceRoutes: Router = Router();
-const SYSTEM_USER = { id: 'system', role: 'admin', republicId: '' };
+
+function monthRange(year: number, month: number) {
+    return {
+        startDate: new Date(year, month - 1, 1),
+        endDate: new Date(year, month, 0, 23, 59, 59, 999),
+    };
+}
+
+function parseYearMonth(req: any): { year: number; month: number } | null {
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    if (!year || !month || month < 1 || month > 12) return null;
+    return { year, month };
+}
+
 /**
- * GET /api/monthly-balance?year=2026&month=6
- * Retorna o saldo calculado de TODOS os moradores ativos no mês.
- * Calcula em tempo real: busca despesas + pagamentos e monta o balanço.
+ * GET /api/monthly-balance/:year/:month
+ * Painel completo do mês: saldo de cada morador, despesas do mês, extras
+ * cobrados do mês anterior e a cota por pessoa. Recalcula a cada chamada.
  */
-monthlyBalanceRoutes.get('/', asyncHandler(async (req, res) => {
-    const year = parseInt(req.query.year as string);
-    const month = parseInt(req.query.month as string);
+monthlyBalanceRoutes.get(
+    '/:year/:month',
+    authMiddleware,
+    authorize('admin', 'resident'),
+    asyncHandler(async (req, res) => {
+        const parsed = parseYearMonth(req);
+        if (!parsed) return res.status(400).json({ error: 'year e month inválidos' });
+        const { year, month } = parsed;
+        const user = req.user!;
 
-    if (!year || !month || month < 1 || month > 12) {
-        return res.status(400).json({ error: 'Parâmetros year e month obrigatórios' });
-    }
+        const monthKey = toMonthKey(year, month);
+        const totalDays = daysInMonth(year, month);
+        const { startDate, endDate } = monthRange(year, month);
 
-    const monthKey = toMonthKey(year, month);
+        const prevMonth = month === 1 ? 12 : month - 1;
+        const prevYear = month === 1 ? year - 1 : year;
+        const prevRange = monthRange(prevYear, prevMonth);
 
-    // Buscar dados necessários em paralelo
-    const [residentsResult, expenses] = await Promise.all([
-        residentRepo.findAll(SYSTEM_USER, 1, 1000),
-        expenseRepo.findAll(SYSTEM_USER, 1, 10000, {
-            startDate: new Date(`${monthKey}-01`),
-            endDate: new Date(`${monthKey}-31`),
-        }),
-    ]);
+        const [residentsResult, expensesResult, prevExtrasResult, existingBalances] = await Promise.all([
+            residentRepo.findAll({ republicId: user.republicId }, 1, 1000),
+            expenseRepo.findAll(user, 1, 10000, { startDate, endDate }),
+            expenseRepo.findAll(user, 1, 10000, { startDate: prevRange.startDate, endDate: prevRange.endDate, isExtra: true }),
+            monthlyBalanceRepo.findByMonth(year, month),
+        ]);
 
-    const activeResidents = residentsResult.data.filter(r => r.isActive);
-    const monthlyShare = calculateMonthlyShare(expenses.data, activeResidents.length);
+        const overrideByResident = new Map(existingBalances.map((b) => [b.residentId, b]));
 
-    // Montar saldo de cada morador
-    const balances = await Promise.all(
-        activeResidents.map(async (resident) => {
+        const monthResidents = residentsResult.data.map((resident) => {
             const residentId = String(resident._id);
+            const override = overrideByResident.get(residentId);
+            const isActive = override?.isActive ?? true;
+            const exitDay = override?.exitDay ?? null;
+            const proportionalFactor = computeProportionalFactor(exitDay, totalDays);
+            return { resident, residentId, isActive, exitDay, proportionalFactor };
+        });
 
-            // Buscar saldo anterior (mês passado)
-            const prevMonth = month === 1 ? 12 : month - 1;
-            const prevYear = month === 1 ? year - 1 : year;
-            const prevBalance = await monthlyBalanceRepo.findByResidentAndMonth(
-                residentId, prevYear, prevMonth
-            );
-            const previousBalance = prevBalance?.currentBalance ?? 0;
+        const activeThisMonth = monthResidents.filter((m) => m.isActive);
+        const monthlyShare = calculateMonthlyShare(expensesResult.data, activeThisMonth.length);
+        const extrasFromPrevious = prevExtrasResult.data.reduce((sum, e) => sum + e.amount, 0);
+        const extrasPerPerson = activeThisMonth.length > 0 ? extrasFromPrevious / activeThisMonth.length : 0;
 
-            // Pagamentos já feitos no mês
-            const payments = await paymentRepo.findByResidentAndMonth(residentId, monthKey);
-            const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+        const balances = await Promise.all(
+            monthResidents.map(async ({ resident, residentId, isActive, exitDay, proportionalFactor }) => {
+                const prevBalanceDoc = await monthlyBalanceRepo.findByResidentAndMonth(residentId, prevYear, prevMonth);
+                const previousBalance = prevBalanceDoc?.currentBalance ?? 0;
 
-            const totalDue = previousBalance + monthlyShare;
-            const currentBalance = calculateCurrentBalance(previousBalance, monthlyShare, amountPaid);
+                const currentMonthDue = isActive ? (monthlyShare + extrasPerPerson) * proportionalFactor : 0;
+                const totalDue = previousBalance + currentMonthDue;
 
-            // Persistir/atualizar o saldo calculado
-            await monthlyBalanceRepo.upsert({
-                residentId, year, month,
-                previousBalance, monthlyShare, totalDue, amountPaid, currentBalance,
-            });
+                const payments = await paymentRepo.findByResidentAndMonth(residentId, monthKey);
+                const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+                const remainingBalance = totalDue - totalPaid;
 
-            return {
-                residentId, residentName: resident.fullName,
-                previousBalance, monthlyShare, totalDue, amountPaid, currentBalance,
-                isPaid: currentBalance <= 0,
-            };
-        })
-    );
+                await monthlyBalanceRepo.upsert({
+                    residentId,
+                    year,
+                    month,
+                    previousBalance,
+                    monthlyShare: currentMonthDue,
+                    totalDue,
+                    amountPaid: totalPaid,
+                    currentBalance: remainingBalance,
+                    isActive,
+                    exitDay,
+                    proportionalFactor,
+                });
 
-    res.json({
-        success: true,
-        data: {
-            year, month, monthKey,
-            monthlyShare,
-            activeResidentCount: activeResidents.length,
-            balances,
-        },
-    });
-}));
+                return {
+                    residentId,
+                    residentName: resident.fullName,
+                    nickname: resident.nickname,
+                    isActive,
+                    exitDay,
+                    proportionalFactor,
+                    payments: payments.map((p) => ({
+                        id: p.id,
+                        residentId: p.residentId,
+                        month: p.month,
+                        amount: p.amount,
+                        proofUrl: p.proofUrl ?? null,
+                        createdAt: p.createdAt,
+                    })),
+                    totalPaid,
+                    previousBalance,
+                    currentMonthDue,
+                    totalDue,
+                    remainingBalance,
+                };
+            })
+        );
+
+        const totalExpenses = expensesResult.data.reduce((sum, e) => sum + e.amount, 0);
+
+        res.json({
+            success: true,
+            data: {
+                month: monthKey,
+                totalExpenses,
+                activeResidents: activeThisMonth.length,
+                perPersonAmount: monthlyShare,
+                balances,
+                expenses: expensesResult.data.map((e) => ({
+                    id: String(e._id),
+                    description: e.description,
+                    category: e.category,
+                    expenseDate: e.expenseDate,
+                    amount: e.amount,
+                    isExtra: e.isExtra,
+                })),
+                extrasFromPrevious,
+                // Módulo de responsáveis mensais ainda não existe no backend
+                manager: null,
+            },
+        });
+    })
+);
 
 /**
- * GET /api/monthly-balance/:residentId?year=2026&month=6
- * Retorna o saldo de UM morador específico no mês.
+ * PUT /api/monthly-balance/:year/:month/:residentId/status
+ * Ativa/desativa um morador especificamente neste mês (não afeta a conta global).
  */
-monthlyBalanceRoutes.get('/:residentId', asyncHandler(async (req, res) => {
-    const year = parseInt(req.query.year as string);
-    const month = parseInt(req.query.month as string);
-    const { residentId } = req.params;
+monthlyBalanceRoutes.put(
+    '/:year/:month/:residentId/status',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        const parsed = parseYearMonth(req);
+        if (!parsed) return res.status(400).json({ error: 'year e month inválidos' });
+        const { isActive } = req.body;
+        if (typeof isActive !== 'boolean') {
+            return res.status(400).json({ error: 'isActive (boolean) obrigatório' });
+        }
 
-    if (!year || !month) {
-        return res.status(400).json({ error: 'year e month obrigatórios' });
-    }
+        const updated = await monthlyBalanceRepo.upsert({
+            residentId: req.params.residentId,
+            year: parsed.year,
+            month: parsed.month,
+            isActive,
+        });
 
-    const balance = await monthlyBalanceRepo.findByResidentAndMonth(residentId, year, month);
-    if (!balance) {
-        return res.status(404).json({ error: 'Saldo não encontrado para este morador/mês' });
-    }
-    res.json({ success: true, data: balance });
-}));
+        res.json({ success: true, data: updated });
+    })
+);
 
 /**
- * POST /api/monthly-balance/:residentId/payment
- * Registra um pagamento diretamente pelo fechamento e recalcula o saldo.
- * Corpo: { year, month, amount, proofUrl? }
+ * PUT /api/monthly-balance/:year/:month/:residentId/proportional
+ * Define o dia de saída do morador no mês, recalculando o fator proporcional.
  */
-monthlyBalanceRoutes.post('/:residentId/payment', asyncHandler(async (req, res) => {
-    const { residentId } = req.params;
-    const { year, month, amount, proofUrl } = req.body;
+monthlyBalanceRoutes.put(
+    '/:year/:month/:residentId/proportional',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        const parsed = parseYearMonth(req);
+        if (!parsed) return res.status(400).json({ error: 'year e month inválidos' });
+        const { exitDay } = req.body;
+        if (!exitDay || exitDay < 1 || exitDay > 31) {
+            return res.status(400).json({ error: 'exitDay deve estar entre 1 e 31' });
+        }
 
-    if (!year || !month || !amount || amount <= 0) {
-        return res.status(400).json({ error: 'year, month e amount obrigatórios' });
-    }
+        const totalDays = daysInMonth(parsed.year, parsed.month);
+        const proportionalFactor = computeProportionalFactor(exitDay, totalDays);
 
-    const monthKey = toMonthKey(year, month);
+        const updated = await monthlyBalanceRepo.upsert({
+            residentId: req.params.residentId,
+            year: parsed.year,
+            month: parsed.month,
+            exitDay,
+            proportionalFactor,
+        });
 
-    // Criar o pagamento
-    const payment = PaymentFactory.create({ residentId, month: monthKey, amount, proofUrl });
-    await paymentRepo.save(payment);
+        res.json({ success: true, data: updated });
+    })
+);
 
-    // Buscar saldo atual e recalcular
-    const current = await monthlyBalanceRepo.findByResidentAndMonth(residentId, year, month);
-    const newAmountPaid = (current?.amountPaid ?? 0) + amount;
-    const newCurrentBalance = (current?.totalDue ?? 0) - newAmountPaid;
+/**
+ * DELETE /api/monthly-balance/:year/:month/:residentId/proportional
+ * Remove o cálculo proporcional — morador volta a contar o mês inteiro.
+ */
+monthlyBalanceRoutes.delete(
+    '/:year/:month/:residentId/proportional',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        const parsed = parseYearMonth(req);
+        if (!parsed) return res.status(400).json({ error: 'year e month inválidos' });
 
-    const updated = await monthlyBalanceRepo.upsert({
-        residentId, year, month,
-        previousBalance: current?.previousBalance ?? 0,
-        monthlyShare: current?.monthlyShare ?? 0,
-        totalDue: current?.totalDue ?? 0,
-        amountPaid: newAmountPaid,
-        currentBalance: newCurrentBalance,
-        paymentProofUrl: proofUrl,
-        paymentDate: new Date(),
-    });
+        const updated = await monthlyBalanceRepo.upsert({
+            residentId: req.params.residentId,
+            year: parsed.year,
+            month: parsed.month,
+            exitDay: null,
+            proportionalFactor: 1,
+        });
 
-    res.status(201).json({ success: true, data: { payment, balance: updated } });
-}));
+        res.json({ success: true, data: updated });
+    })
+);
+
+/**
+ * POST /api/monthly-balance/:year/:month/:residentId/payment
+ * Registra um pagamento do morador para o mês.
+ */
+monthlyBalanceRoutes.post(
+    '/:year/:month/:residentId/payment',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        const parsed = parseYearMonth(req);
+        if (!parsed) return res.status(400).json({ error: 'year e month inválidos' });
+        const { amount } = req.body;
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: 'amount inválido' });
+        }
+
+        const monthKey = toMonthKey(parsed.year, parsed.month);
+        const payment = PaymentFactory.create({ residentId: req.params.residentId, month: monthKey, amount });
+        const saved = await paymentRepo.save(payment);
+
+        res.status(201).json({ success: true, data: saved });
+    })
+);
+
+/**
+ * DELETE /api/monthly-balance/payment/:paymentId
+ * Remove um lançamento de pagamento específico.
+ */
+monthlyBalanceRoutes.delete(
+    '/payment/:paymentId',
+    authMiddleware,
+    authorize('admin'),
+    asyncHandler(async (req, res) => {
+        await paymentRepo.delete(req.params.paymentId);
+        res.json({ success: true });
+    })
+);
