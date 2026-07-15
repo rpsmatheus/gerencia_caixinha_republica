@@ -65,7 +65,7 @@ Estava listada como a maior parte do trabalho restante — hoje todas as telas p
 
 ### Sprint 10 — Testes, refinamentos e entrega — 🔄 Em andamento
 
-- **Testes automatizados** — 135 testes no backend + 30 no frontend, CI ativo no GitHub Actions rodando typecheck + testes + cobertura + build em push/PR (ver [docs/testes.md](testes.md)).
+- **Testes automatizados** — 135 testes no backend + 31 no frontend, CI ativo no GitHub Actions rodando typecheck + testes + cobertura + build em push/PR (ver [docs/testes.md](testes.md)).
 - **Seed de dados** — `backend/src/database/seed.ts` (`pnpm db:seed`), populando ~3 meses de dados de demonstração (moradores, despesas, pagamentos, saldos, categorias, templates de orçamento) e migrando registros antigos sem os campos de auth/RBAC/categoria.
 - Ainda falta: lint no CI, middleware de erro global e testes das demais páginas do frontend (ver gaps abaixo) — por isso o status é "em andamento", não "concluído".
 

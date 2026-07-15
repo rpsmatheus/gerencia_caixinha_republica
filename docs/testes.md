@@ -112,9 +112,10 @@ Antes desta fase o `frontend/package.json` não tinha nenhuma ferramenta de test
 | `tests/components/ActionButton.test.tsx` | `src/components/ActionButton.tsx` | modo emoji-only vs. `showText`, `onClick`, `disabled`, `title` customizado |
 | `tests/components/Notification.test.tsx` | `src/components/Notification.tsx` | auto-dismiss via `onClose` após `duration` (timers falsos), duração padrão de 3000ms |
 | `tests/components/ResidentCard.test.tsx` | `src/components/ResidentCard.tsx` | badge Ativo/Inativo, botões condicionais por prop, `onDelete` só dispara após confirmação (`window.confirm` mockado) |
+| `tests/components/ResidentBalanceCard.test.tsx` | `src/components/ResidentBalanceCard.tsx` | remoção do cálculo proporcional chama `onSetProportional(null)`, garantindo que a tela mensal acione o DELETE correto |
 | `tests/pages/Residents.test.tsx` | `src/pages/Residents.tsx` | busca visível na listagem, e busca/lista escondidas durante criação ou edição de morador — `services/api.ts`, `useAuth` e `usePermissions` mockados |
 
-**Resultado:** 30 testes, 7 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. `Residents` já tem teste de página pontual; `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics` e `services/api.ts` continuam sem testes dedicados — ver "não implementado" abaixo.
+**Resultado:** 31 testes, 8 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. `Residents` já tem teste de página pontual; `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics` e `services/api.ts` continuam sem testes dedicados — ver "não implementado" abaixo.
 
 ### Como rodar
 

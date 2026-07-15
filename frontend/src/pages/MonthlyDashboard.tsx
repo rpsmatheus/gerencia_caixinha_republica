@@ -258,7 +258,7 @@ export default function MonthlyDashboard() {
                 onToggleStatus={canManageResidents ? () => handleToggleResident(balance.residentId, balance.isActive) : undefined}
                 onDeletePayment={canManagePayments ? handleDeletePayment : undefined}
                 onRegisterPayment={canManagePayments ? (amount: number) => handleRegisterPayment(balance.residentId, amount) : undefined}
-		onSetProportional={canManageResidents ? (exitDay: number | null) => exitDay !== null && handleSetProportional(balance.residentId, exitDay) : undefined}
+                onSetProportional={canManageResidents ? (exitDay: number | null) => handleSetProportional(balance.residentId, exitDay) : undefined}
               />
             ))}
           </div>
