@@ -20,7 +20,7 @@ Ambiente completamente containerizado com Docker Compose: backend (porta 3001), 
 
 ### Sprint 1 — Módulo de Despesas — ✅ Concluído
 
-`GET/POST/PUT/DELETE /api/expenses` com filtros dinâmicos via query string: categoria, valor mínimo/máximo, busca por descrição, intervalo de datas. O cadastro/edição aceita `proofUrl` para guardar a URL externa do comprovante (Drive/S3/imagem/PDF); o projeto não hospeda arquivos binários. Despesas comuns entram na divisão entre moradores; extras não. Categorias via enum `ExpenseCategory`: Moradia, Alimentação, Transporte, Utilidades, Limpeza, Internet, Pets e Outros. Resultados paginados.
+`GET/POST/PUT/DELETE /api/expenses` com filtros dinâmicos via query string: categoria, valor mínimo/máximo, busca por descrição, intervalo de datas. O comprovante da despesa é um upload real de PDF: `POST/GET/DELETE /api/expenses/:id/proof` sobem, baixam e removem o arquivo, guardado em disco (`backend/uploads/expenses/`) e auditável por qualquer morador/admin da mesma república. Despesas comuns entram na divisão entre moradores; extras não. Categorias via enum `ExpenseCategory`: Moradia, Alimentação, Transporte, Utilidades, Limpeza, Internet, Pets e Outros. Resultados paginados.
 
 ### Sprint 2 — Categorias e Orçamentos — ✅ Concluído (cresceu além do previsto)
 

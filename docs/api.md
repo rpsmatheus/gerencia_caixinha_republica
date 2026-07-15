@@ -76,18 +76,30 @@ Query: `page`, `limit`, `category`, `minAmount`, `maxAmount`, `search` (parcial 
 `200` → `{ success: true, data: Expense }` · `404` se não encontrado.
 
 ### `POST /expenses`
-Body: `{ description, category, amount, expenseDate, notes?, proofUrl? }`.
+Body: `{ description, category, amount, expenseDate, notes? }`.
 `201` → `{ success: true, data: Expense }`.
 > Erros de validação da factory (`description`/`amount`/`category`/`expenseDate` ausentes, `amount <= 0`) **não viram 400** hoje — chegam ao handler padrão do Express e retornam `500` (gap documentado em [docs/andamento.md](andamento.md)).
 
 ### `PUT /expenses/:id`
-Body: qualquer subconjunto de `{ description, category, amount, expenseDate, notes, proofUrl }`.
+Body: qualquer subconjunto de `{ description, category, amount, expenseDate, notes }`.
 `200` → `{ success: true, data: Expense }` · `404` se não encontrado.
 
 ### `DELETE /expenses/:id`
 `200` → `{ success: true, message: "Despesa removida com sucesso" }`.
 
-**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, proofUrl, createdAt, updatedAt }`. `proofUrl` guarda uma URL externa do comprovante (Drive, S3, imagem ou PDF); o projeto não armazena o arquivo binário. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
+### `POST /expenses/:id/proof`
+Envia (ou substitui) o comprovante da despesa. Body `multipart/form-data` com um único campo `file`, aceitando somente `application/pdf` (limite de 10MB). Se já existir um comprovante, o arquivo antigo é apagado do disco.
+`200` → `{ success: true, data: Expense }` · `400` se o arquivo não for PDF ou estiver ausente · `404` se a despesa não existir (ou for de outra república).
+
+### `GET /expenses/:id/proof`
+Baixa o PDF do comprovante da despesa (mesmas permissões das demais rotas de despesa — qualquer morador/admin da mesma república).
+`200` → arquivo PDF (`Content-Disposition: attachment`) · `404` se a despesa ou o comprovante não existir.
+
+### `DELETE /expenses/:id/proof`
+Remove o comprovante da despesa (apaga o arquivo do disco e limpa os metadados).
+`200` → `{ success: true, data: Expense }` · `404` se não houver comprovante.
+
+**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, hasProof, proofOriginalName, createdAt, updatedAt }`. `hasProof` indica se existe um PDF de comprovante salvo no servidor; `proofOriginalName` é o nome original do arquivo enviado (para exibição). O comprovante em si é obtido via `GET /expenses/:id/proof`, não vem embutido na resposta. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
 
 ---
 

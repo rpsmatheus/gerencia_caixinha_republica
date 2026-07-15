@@ -1,8 +1,11 @@
 import { ObjectId } from "mongodb";
+import fs from 'fs/promises';
+import path from 'path';
 
 import { IExpense } from '../models/Expense.js';
 import { IExpenseFilter } from '../models/Expense.js';
 import { DatabaseConnection } from '../config/database.js';
+import { PROOF_UPLOAD_DIR } from '../shared/middlewares/uploadMiddleware.js';
 
 export class ExpenseRepository {
   private getCollection() {
@@ -120,6 +123,23 @@ export class ExpenseRepository {
     return await this.findById(id, user);
   }
 
+  // 📌 REMOVER COMPROVANTE (sem apagar o resto da despesa)
+  async clearProof(
+    id: string,
+    user: { id: string; role: string, republicId: string}
+  ): Promise<IExpense | null> {
+    const collection = this.getCollection();
+
+    const query: any = { _id: new ObjectId(id), republicId: user.republicId };
+
+    await collection.updateOne(query, {
+      $unset: { proofFileName: '', proofOriginalName: '' },
+      $set: { updatedAt: new Date() },
+    });
+
+    return await this.findById(id, user);
+  }
+
   // 📌 DELETAR
   async delete(id: string, user: { id: string; role: string, republicId: string}): Promise<void> {
     const collection = this.getCollection();
@@ -129,6 +149,11 @@ export class ExpenseRepository {
     // Cada admin é dono de UMA república (criada no registro), não de todas —
     // sem esse filtro, despesas de repúblicas diferentes vazam entre si.
     query.republicId = user.republicId;
+
+    const expense = await collection.findOne(query);
+    if (expense?.proofFileName) {
+      await fs.unlink(path.join(PROOF_UPLOAD_DIR, expense.proofFileName)).catch(() => {});
+    }
 
     await collection.deleteOne(query);
   }

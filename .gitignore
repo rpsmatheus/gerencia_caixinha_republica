@@ -34,5 +34,8 @@ pnpm-debug.log*
 # Docker
 .docker/
 
+# Comprovantes enviados pelos usuários (armazenados só em disco local)
+backend/uploads/
+
 # Outros
 .DS_Store

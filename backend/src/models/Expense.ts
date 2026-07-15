@@ -41,8 +41,11 @@ export interface IExpense {
   /** Data da despesa */
   expenseDate: Date;
 
-  /** URL do comprovante no Google Drive ou S3 (opcional) */
-  proofUrl?: string;
+  /** Nome do arquivo do comprovante salvo em disco (opcional) */
+  proofFileName?: string;
+
+  /** Nome original do arquivo enviado pelo usuário (para exibição) */
+  proofOriginalName?: string;
 
   /** Notas adicionais sobre a despesa */
   notes?: string;
@@ -72,9 +75,6 @@ export interface ICreateExpenseDTO {
 
   /** Notas adicionais */
   notes?: string;
-
-  /** URL externa do comprovante */
-  proofUrl?: string;
 }
 
 /**
@@ -95,9 +95,6 @@ export interface IUpdateExpenseDTO {
 
   /** Novas notas (opcional) */
   notes?: string;
-
-  /** Nova URL de comprovante (opcional) */
-  proofUrl?: string;
 }
 
 /**

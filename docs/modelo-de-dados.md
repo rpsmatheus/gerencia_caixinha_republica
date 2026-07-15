@@ -42,7 +42,8 @@ Representa tanto o admin de uma república quanto seus moradores — diferenciad
 | `category` | string | Um dos valores de `ExpenseCategory` ou uma categoria customizada (ver `Category`) |
 | `amount` | number | > 0 |
 | `expenseDate` | Date | |
-| `proofUrl` | string? | URL externa do comprovante (Drive/S3/imagem/PDF), informada no cadastro/edição da despesa |
+| `proofFileName` | string? | Nome do arquivo do comprovante salvo em disco (`backend/uploads/expenses/`), gerado (UUID) — nunca exposto ao cliente |
+| `proofOriginalName` | string? | Nome original do PDF enviado pelo usuário, só para exibição |
 | `notes` | string? | |
 | `createdAt`, `updatedAt` | Date | |
 

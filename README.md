@@ -191,9 +191,12 @@ PUT    /residents/:id          🔒 Atualiza morador (o próprio ou admin)
 ```
 GET    /expenses               🔒 Lista com filtros: ?category=&minAmount=&maxAmount=&search=&startDate=&endDate=
 GET    /expenses/:id           🔒 Busca por ID
-POST   /expenses               🔒 Cria despesa (aceita proofUrl)
-PUT    /expenses/:id           🔒 Atualiza despesa (aceita proofUrl)
+POST   /expenses               🔒 Cria despesa
+PUT    /expenses/:id           🔒 Atualiza despesa
 DELETE /expenses/:id           🔒 Remove despesa
+POST   /expenses/:id/proof     🔒 Envia/substitui o comprovante (PDF, multipart/form-data)
+GET    /expenses/:id/proof     🔒 Baixa o comprovante em PDF
+DELETE /expenses/:id/proof     🔒 Remove o comprovante
 ```
 
 ### Categorias

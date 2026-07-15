@@ -32,7 +32,7 @@ Lista de histórias de usuário do Caixinha App e o status real de implementaç�
 | 11 | Como usuário, quero excluir uma despesa, para remover um lançamento indevido. | ✅ | `DELETE /api/expenses/:id` |
 | 12 | Como admin, quero gerenciar categorias de despesa, para organizar os gastos como a república preferir. | ✅ | `GET/POST/DELETE /api/categories`, customizadas por república. |
 | 13 | Como usuário, quero marcar uma despesa como "extra" (fora da divisão padrão), para separar gastos individuais dos coletivos. | ❌ | Removido — decidimos que era uma regra de negócio específica demais para um app que queremos manter genérico; hoje toda despesa listada entra igualmente no cálculo da cota mensal. |
-| 14 | Como usuário, quero anexar o comprovante de uma despesa (upload), para guardar prova do gasto. | ✅ | Implementado como URL externa em `proofUrl`: o usuário informa o link do arquivo/imagem/PDF no cadastro ou edição da despesa e pode abrir/visualizar depois. O projeto não hospeda binários. |
+| 14 | Como usuário, quero anexar o comprovante de uma despesa (upload), para guardar prova do gasto. | ✅ | Upload real de PDF via `POST /api/expenses/:id/proof`, salvo em disco no servidor; qualquer morador/admin da mesma república baixa o arquivo depois (`GET /api/expenses/:id/proof`) para auditar o gasto. |
 | 15 | Como usuário, quero visualizar um resumo das despesas, para entender o total gasto rapidamente. | ✅ | Resumo por categoria em `GET /api/reports/monthly` e nos gráficos de Analytics. |
 
 ## Fechamento Mensal
