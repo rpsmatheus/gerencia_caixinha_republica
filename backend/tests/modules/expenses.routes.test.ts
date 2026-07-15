@@ -28,6 +28,8 @@ vi.mock('../../src/shared/middlewares/authMiddleware.js', () => ({
   },
 }));
 
+process.env.PROOF_UPLOAD_DIR = path.resolve(process.cwd(), 'tmp/test-proof-uploads');
+
 const { createApp } = await import('../../src/app/createApp.js');
 const { PROOF_UPLOAD_DIR } = await import('../../src/shared/middlewares/uploadMiddleware.js');
 
@@ -35,9 +37,7 @@ const app = createApp();
 const uploadedFiles: string[] = [];
 
 afterAll(() => {
-  for (const name of uploadedFiles) {
-    fs.rmSync(path.join(PROOF_UPLOAD_DIR, name), { force: true });
-  }
+  fs.rmSync(PROOF_UPLOAD_DIR, { recursive: true, force: true });
 });
 
 const EXPENSE_ID = '507f1f77bcf86cd799439020';
@@ -229,15 +229,70 @@ describe('POST /api/expenses/:id/proof', () => {
     );
   });
 
-  it('rejeita arquivo que não é PDF', async () => {
+  it('envia uma imagem como comprovante', async () => {
+    expenseRepoMock.findById.mockResolvedValue(makeExpense());
+    expenseRepoMock.update.mockImplementation(async (_id: string, patch: any) => {
+      uploadedFiles.push(patch.proofFileName);
+      return makeExpense(patch);
+    });
+
+    const res = await request(app)
+      .post(`/api/expenses/${EXPENSE_ID}/proof`)
+      .set(authHeader())
+      .attach('file', Buffer.from('fake png'), {
+        filename: 'foto.png',
+        contentType: 'image/png',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.hasProof).toBe(true);
+    expect(res.body.data.proofOriginalName).toBe('foto.png');
+    expect(expenseRepoMock.update).toHaveBeenCalledWith(
+      EXPENSE_ID,
+      expect.objectContaining({
+        proofFileName: expect.stringMatching(/\.png$/),
+        proofOriginalName: 'foto.png',
+      }),
+      { id: 'user-1', role: 'admin', republicId: 'republic-1' }
+    );
+  });
+
+  it('aceita outros MIME types de imagem usando a extensão original', async () => {
+    expenseRepoMock.findById.mockResolvedValue(makeExpense());
+    expenseRepoMock.update.mockImplementation(async (_id: string, patch: any) => {
+      uploadedFiles.push(patch.proofFileName);
+      return makeExpense(patch);
+    });
+
+    const res = await request(app)
+      .post(`/api/expenses/${EXPENSE_ID}/proof`)
+      .set(authHeader())
+      .attach('file', Buffer.from('fake jpg'), {
+        filename: 'foto.jpg',
+        contentType: 'image/jpg',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.proofOriginalName).toBe('foto.jpg');
+    expect(expenseRepoMock.update).toHaveBeenCalledWith(
+      EXPENSE_ID,
+      expect.objectContaining({
+        proofFileName: expect.stringMatching(/\.jpg$/),
+        proofOriginalName: 'foto.jpg',
+      }),
+      { id: 'user-1', role: 'admin', republicId: 'republic-1' }
+    );
+  });
+
+  it('rejeita arquivo que não é PDF nem imagem', async () => {
     expenseRepoMock.findById.mockResolvedValue(makeExpense());
 
     const res = await request(app)
       .post(`/api/expenses/${EXPENSE_ID}/proof`)
       .set(authHeader())
-      .attach('file', Buffer.from('fake image'), {
-        filename: 'foto.png',
-        contentType: 'image/png',
+      .attach('file', Buffer.from('texto'), {
+        filename: 'nota.txt',
+        contentType: 'text/plain',
       });
 
     expect(res.status).toBe(400);

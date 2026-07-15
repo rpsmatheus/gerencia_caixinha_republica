@@ -88,18 +88,18 @@ Body: qualquer subconjunto de `{ description, category, amount, expenseDate, not
 `200` → `{ success: true, message: "Despesa removida com sucesso" }`.
 
 ### `POST /expenses/:id/proof`
-Envia (ou substitui) o comprovante da despesa. Body `multipart/form-data` com um único campo `file`, aceitando somente `application/pdf` (limite de 10MB). Se já existir um comprovante, o arquivo antigo é apagado do disco.
-`200` → `{ success: true, data: Expense }` · `400` se o arquivo não for PDF ou estiver ausente · `404` se a despesa não existir (ou for de outra república).
+Envia (ou substitui) o comprovante da despesa. Body `multipart/form-data` com um único campo `file`, aceitando `application/pdf` ou qualquer `image/*` (limite de 10MB). Se já existir um comprovante, o arquivo antigo é apagado do disco.
+`200` → `{ success: true, data: Expense }` · `400` se o arquivo não for PDF/imagem ou estiver ausente · `404` se a despesa não existir (ou for de outra república).
 
 ### `GET /expenses/:id/proof`
-Baixa o PDF do comprovante da despesa (mesmas permissões das demais rotas de despesa — qualquer morador/admin da mesma república).
-`200` → arquivo PDF (`Content-Disposition: attachment`) · `404` se a despesa ou o comprovante não existir.
+Baixa o arquivo do comprovante da despesa (mesmas permissões das demais rotas de despesa — qualquer morador/admin da mesma república).
+`200` → arquivo do comprovante (`Content-Disposition: attachment`) · `404` se a despesa ou o comprovante não existir.
 
 ### `DELETE /expenses/:id/proof`
 Remove o comprovante da despesa (apaga o arquivo do disco e limpa os metadados).
 `200` → `{ success: true, data: Expense }` · `404` se não houver comprovante.
 
-**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, hasProof, proofOriginalName, createdAt, updatedAt }`. `hasProof` indica se existe um PDF de comprovante salvo no servidor; `proofOriginalName` é o nome original do arquivo enviado (para exibição). O comprovante em si é obtido via `GET /expenses/:id/proof`, não vem embutido na resposta. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
+**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, hasProof, proofOriginalName, createdAt, updatedAt }`. `hasProof` indica se existe um arquivo de comprovante salvo no servidor; `proofOriginalName` é o nome original do arquivo enviado (para exibição). O comprovante em si é obtido via `GET /expenses/:id/proof`, não vem embutido na resposta. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
 
 ---
 

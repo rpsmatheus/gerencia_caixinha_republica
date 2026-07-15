@@ -68,14 +68,14 @@ Para rotas protegidas, `authMiddleware` também é mockado: em vez de verificar 
 |---|---|---|
 | `tests/modules/auth.routes.test.ts` | `auth` | registro (senha curta, nickname duplicado), login (senha errada com argon2 real, usuário inexistente), `/me` e `/change-password` autenticados via `DatabaseConnection` mockada |
 | `tests/modules/residents.routes.test.ts` | `residents` | RBAC (`POST` só admin), um morador só edita a si mesmo, admin pode mudar categoria e outros não, conflito de nickname (409) |
-| `tests/modules/expenses.routes.test.ts` | `expenses` | paginação, filtros repassados ao repository, 404 em `GET`/`PUT` por id, **erro de validação da factory não vira 400** (ver "Gaps encontrados" abaixo) |
+| `tests/modules/expenses.routes.test.ts` | `expenses` | paginação, filtros repassados ao repository, 404 em `GET`/`PUT` por id, upload de comprovante em PDF ou imagem (`image/*`), rejeição de formato inválido, download e remoção do arquivo, **erro de validação da factory não vira 400** (ver "Gaps encontrados" abaixo) |
 | `tests/modules/payments.routes.test.ts` | `payments` | sem autenticação (rota pública — ver gaps), filtro por `residentId`, validação de `month` |
 | `tests/modules/categories.routes.test.ts` | `categories` | RBAC, nome duplicado (409, case-insensitive na regra real) |
 | `tests/modules/reports.routes.test.ts` | `reports` | agregação de despesas por categoria, taxa de adimplência, caso sem moradores ativos |
 | `tests/modules/monthlyBalance.routes.test.ts` | `monthly-balance` | divisão igualitária, **redistribuição da cota de quem está inativo no mês**, saldo anterior + pagamentos no cálculo do saldo restante, status/proporcional/pagamento |
 | `tests/modules/budgets.routes.test.ts` | `budgets` | modelos (templates), simulação idempotente por descrição, aplicar orçamento como despesa real (404/409), atualizar e remover |
 
-**Resultado:** 89 testes de integração + 46 unitários = **135 testes**, 13 arquivos. Módulos de rota entre 94% e 100% de cobertura (o que falta é código dentro dos mocks — `authMiddleware.ts`, `database.ts`, corpo interno dos repositories — que não deve mesmo ser exercitado aqui).
+**Resultado:** 97 testes de integração + 46 unitários = **143 testes**, 13 arquivos. Módulos de rota entre 94% e 100% de cobertura (o que falta é código dentro dos mocks — `authMiddleware.ts`, `database.ts`, corpo interno dos repositories — que não deve mesmo ser exercitado aqui).
 
 ### Gaps reais encontrados durante os testes (não corrigidos, fora do escopo desta tarefa)
 
@@ -87,7 +87,7 @@ Para rotas protegidas, `authMiddleware` também é mockado: em vez de verificar 
 
 ```bash
 cd backend
-pnpm test                          # todos os 135 testes
+pnpm test                          # todos os 143 testes
 pnpm test tests/modules/            # só os testes de integração de rotas
 pnpm test:coverage
 ```
@@ -114,8 +114,9 @@ Antes desta fase o `frontend/package.json` não tinha nenhuma ferramenta de test
 | `tests/components/ResidentCard.test.tsx` | `src/components/ResidentCard.tsx` | badge Ativo/Inativo, botões condicionais por prop, `onDelete` só dispara após confirmação (`window.confirm` mockado) |
 | `tests/components/ResidentBalanceCard.test.tsx` | `src/components/ResidentBalanceCard.tsx` | remoção do cálculo proporcional chama `onSetProportional(null)`, garantindo que a tela mensal acione o DELETE correto |
 | `tests/pages/Residents.test.tsx` | `src/pages/Residents.tsx` | busca visível na listagem, e busca/lista escondidas durante criação ou edição de morador — `services/api.ts`, `useAuth` e `usePermissions` mockados |
+| `tests/pages/Expenses.test.tsx` | `src/pages/Expenses.tsx` | botão de visualizar comprovante baixa o blob e abre nova aba sem abrir o modal de edição — `services/api.ts` e `usePermissions` mockados |
 
-**Resultado:** 31 testes, 8 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. `Residents` já tem teste de página pontual; `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics` e `services/api.ts` continuam sem testes dedicados — ver "não implementado" abaixo.
+**Resultado:** 32 testes, 9 arquivos. Cobertura de 100% em `usePermissions.ts`, `Button.tsx` e `ResidentCard.tsx`; 98% em `AuthContext.tsx`; 92% em `Notification.tsx`. `Residents` e `Expenses` já têm testes de página pontuais; `MonthlyDashboard`, `Budgets`, `Analytics` e `services/api.ts` continuam sem testes dedicados — ver "não implementado" abaixo.
 
 ### Como rodar
 
@@ -128,7 +129,7 @@ pnpm test:coverage
 
 ### Não implementado nesta fase
 
-Mockar `services/api.ts` para testar todas as páginas grandes foi deixado parcialmente de fora: `Residents` ganhou cobertura pontual para busca e modo de formulário, mas `Expenses`, `MonthlyDashboard`, `Budgets` e `Analytics` ainda não têm testes dedicados — são componentes grandes (300–500 linhas) com bastante estado local, e o retorno maior nesta rodada estava em cobrir a lógica de autorização/sessão e os componentes reutilizados em todas as telas. Fica como próximo passo natural.
+Mockar `services/api.ts` para testar todas as páginas grandes foi deixado parcialmente de fora: `Residents` ganhou cobertura pontual para busca e modo de formulário, e `Expenses` ganhou cobertura pontual para visualização de comprovante. `MonthlyDashboard`, `Budgets` e `Analytics` ainda não têm testes dedicados — são componentes grandes (300–500 linhas) com bastante estado local, e o retorno maior nesta rodada estava em cobrir a lógica de autorização/sessão, componentes reutilizados e regressões pontuais nas telas. Fica como próximo passo natural.
 
 ## Fase 4 — CI ✅
 

@@ -23,6 +23,15 @@ const api: AxiosInstance = axios.create({
 
 // ── Interceptor de request: injeta Bearer token ───────────────────────────────
 api.interceptors.request.use((config) => {
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    const headers = config.headers as any;
+    if (typeof headers.delete === 'function') {
+      headers.delete('Content-Type');
+    } else {
+      delete headers['Content-Type'];
+    }
+  }
+
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

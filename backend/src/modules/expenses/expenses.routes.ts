@@ -179,7 +179,7 @@ expenseRoutes.delete(
 
 /**
  * 📌 POST /api/expenses/:id/proof
- * Envia (ou substitui) o comprovante em PDF de uma despesa
+ * Envia (ou substitui) o comprovante de uma despesa
  */
 expenseRoutes.post(
   '/:id/proof',
@@ -235,7 +235,7 @@ expenseRoutes.post(
 
 /**
  * 📌 GET /api/expenses/:id/proof
- * Baixa o comprovante em PDF de uma despesa
+ * Baixa o comprovante de uma despesa
  */
 expenseRoutes.get(
   '/:id/proof',
@@ -261,7 +261,7 @@ expenseRoutes.get(
 
 /**
  * 📌 DELETE /api/expenses/:id/proof
- * Remove o comprovante em PDF de uma despesa
+ * Remove o comprovante de uma despesa
  */
 expenseRoutes.delete(
   '/:id/proof',

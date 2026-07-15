@@ -194,8 +194,8 @@ GET    /expenses/:id           🔒 Busca por ID
 POST   /expenses               🔒 Cria despesa
 PUT    /expenses/:id           🔒 Atualiza despesa
 DELETE /expenses/:id           🔒 Remove despesa
-POST   /expenses/:id/proof     🔒 Envia/substitui o comprovante (PDF, multipart/form-data)
-GET    /expenses/:id/proof     🔒 Baixa o comprovante em PDF
+POST   /expenses/:id/proof     🔒 Envia/substitui o comprovante (PDF ou imagem, multipart/form-data)
+GET    /expenses/:id/proof     🔒 Baixa o arquivo do comprovante
 DELETE /expenses/:id/proof     🔒 Remove o comprovante
 ```
 

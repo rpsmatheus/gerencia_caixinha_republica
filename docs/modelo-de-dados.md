@@ -43,7 +43,7 @@ Representa tanto o admin de uma república quanto seus moradores — diferenciad
 | `amount` | number | > 0 |
 | `expenseDate` | Date | |
 | `proofFileName` | string? | Nome do arquivo do comprovante salvo em disco (`backend/uploads/expenses/`), gerado (UUID) — nunca exposto ao cliente |
-| `proofOriginalName` | string? | Nome original do PDF enviado pelo usuário, só para exibição |
+| `proofOriginalName` | string? | Nome original do arquivo enviado pelo usuário, só para exibição |
 | `notes` | string? | |
 | `createdAt`, `updatedAt` | Date | |
 

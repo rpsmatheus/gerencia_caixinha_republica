@@ -12,7 +12,7 @@
 11. Excluir despesa - ok
 12. Gerenciar categorias - ok
 13. Marcar despesa como extra - não (decidimos tirar por ser algo muito especifico)
-14. Anexar comprovante (URL) - ok
+14. Anexar comprovante por upload de arquivo (PDF ou imagem) - ok
 15. Visualizar resumo de despesas - ok
 16. Calcular saldo mensal automaticamente - ok
 17. Aplicar fator proporcional - ok

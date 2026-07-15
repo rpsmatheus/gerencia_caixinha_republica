@@ -24,7 +24,8 @@ describe('ExpenseFactory.create', () => {
     expect(expense.category).toBe('Utilidades');
     expect(expense.amount).toBe(150.5);
     expect(expense.expenseDate).toEqual(new Date('2026-06-10'));
-    expect(expense.proofUrl).toBeUndefined();
+    expect(expense.proofFileName).toBeUndefined();
+    expect(expense.proofOriginalName).toBeUndefined();
     expect(expense.createdAt).toBeInstanceOf(Date);
     expect(expense.updatedAt).toBeInstanceOf(Date);
   });
