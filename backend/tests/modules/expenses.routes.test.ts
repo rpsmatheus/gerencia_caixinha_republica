@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
 import { ObjectId } from 'mongodb';
+import fs from 'fs';
+import path from 'path';
 
 const { expenseRepoMock } = vi.hoisted(() => ({
   expenseRepoMock: {
@@ -9,6 +11,7 @@ const { expenseRepoMock } = vi.hoisted(() => ({
     save: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    clearProof: vi.fn(),
   },
 }));
 
@@ -26,8 +29,16 @@ vi.mock('../../src/shared/middlewares/authMiddleware.js', () => ({
 }));
 
 const { createApp } = await import('../../src/app/createApp.js');
+const { PROOF_UPLOAD_DIR } = await import('../../src/shared/middlewares/uploadMiddleware.js');
 
 const app = createApp();
+const uploadedFiles: string[] = [];
+
+afterAll(() => {
+  for (const name of uploadedFiles) {
+    fs.rmSync(path.join(PROOF_UPLOAD_DIR, name), { force: true });
+  }
+});
 
 const EXPENSE_ID = '507f1f77bcf86cd799439020';
 
@@ -45,7 +56,8 @@ function makeExpense(overrides: Record<string, unknown> = {}) {
     amount: 150,
     expenseDate: new Date('2026-06-10'),
     notes: undefined,
-    proofUrl: undefined,
+    proofFileName: undefined,
+    proofOriginalName: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -173,6 +185,7 @@ describe('PUT /api/expenses/:id', () => {
       { id: 'user-1', role: 'admin', republicId: 'republic-1' }
     );
   });
+
 });
 
 describe('DELETE /api/expenses/:id', () => {
@@ -187,5 +200,126 @@ describe('DELETE /api/expenses/:id', () => {
       role: 'admin',
       republicId: 'republic-1',
     });
+  });
+});
+
+describe('POST /api/expenses/:id/proof', () => {
+  it('envia um PDF como comprovante', async () => {
+    expenseRepoMock.findById.mockResolvedValue(makeExpense());
+    expenseRepoMock.update.mockImplementation(async (_id: string, patch: any) => {
+      uploadedFiles.push(patch.proofFileName);
+      return makeExpense(patch);
+    });
+
+    const res = await request(app)
+      .post(`/api/expenses/${EXPENSE_ID}/proof`)
+      .set(authHeader())
+      .attach('file', Buffer.from('%PDF-1.4 conteúdo fake'), {
+        filename: 'nota.pdf',
+        contentType: 'application/pdf',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.hasProof).toBe(true);
+    expect(res.body.data.proofOriginalName).toBe('nota.pdf');
+    expect(expenseRepoMock.update).toHaveBeenCalledWith(
+      EXPENSE_ID,
+      expect.objectContaining({ proofOriginalName: 'nota.pdf' }),
+      { id: 'user-1', role: 'admin', republicId: 'republic-1' }
+    );
+  });
+
+  it('rejeita arquivo que não é PDF', async () => {
+    expenseRepoMock.findById.mockResolvedValue(makeExpense());
+
+    const res = await request(app)
+      .post(`/api/expenses/${EXPENSE_ID}/proof`)
+      .set(authHeader())
+      .attach('file', Buffer.from('fake image'), {
+        filename: 'foto.png',
+        contentType: 'image/png',
+      });
+
+    expect(res.status).toBe(400);
+    expect(expenseRepoMock.update).not.toHaveBeenCalled();
+  });
+
+  it('retorna 404 quando a despesa não existe ou é de outra república', async () => {
+    expenseRepoMock.findById.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post(`/api/expenses/${EXPENSE_ID}/proof`)
+      .set(authHeader())
+      .attach('file', Buffer.from('%PDF-1.4'), {
+        filename: 'nota.pdf',
+        contentType: 'application/pdf',
+      });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('GET /api/expenses/:id/proof', () => {
+  it('baixa o comprovante quando existe', async () => {
+    const fileName = `${Date.now()}-test.pdf`;
+    fs.mkdirSync(PROOF_UPLOAD_DIR, { recursive: true });
+    fs.writeFileSync(path.join(PROOF_UPLOAD_DIR, fileName), '%PDF-1.4 conteúdo fake');
+    uploadedFiles.push(fileName);
+
+    expenseRepoMock.findById.mockResolvedValue(
+      makeExpense({ proofFileName: fileName, proofOriginalName: 'nota.pdf' })
+    );
+
+    const res = await request(app).get(`/api/expenses/${EXPENSE_ID}/proof`).set(authHeader());
+
+    expect(res.status).toBe(200);
+  });
+
+  it('retorna 404 quando não há comprovante', async () => {
+    expenseRepoMock.findById.mockResolvedValue(makeExpense());
+
+    const res = await request(app).get(`/api/expenses/${EXPENSE_ID}/proof`).set(authHeader());
+
+    expect(res.status).toBe(404);
+  });
+
+  it('bloqueia acesso a despesa de outra república', async () => {
+    // findById já filtra por republicId no repository real — aqui simulamos o retorno null
+    expenseRepoMock.findById.mockResolvedValue(null);
+
+    const res = await request(app).get(`/api/expenses/${EXPENSE_ID}/proof`).set(authHeader());
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('DELETE /api/expenses/:id/proof', () => {
+  it('remove o comprovante', async () => {
+    const fileName = `${Date.now()}-delete.pdf`;
+    fs.mkdirSync(PROOF_UPLOAD_DIR, { recursive: true });
+    fs.writeFileSync(path.join(PROOF_UPLOAD_DIR, fileName), '%PDF-1.4 conteúdo fake');
+
+    expenseRepoMock.findById.mockResolvedValue(
+      makeExpense({ proofFileName: fileName, proofOriginalName: 'nota.pdf' })
+    );
+    expenseRepoMock.clearProof.mockResolvedValue(makeExpense());
+
+    const res = await request(app).delete(`/api/expenses/${EXPENSE_ID}/proof`).set(authHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.hasProof).toBe(false);
+    expect(expenseRepoMock.clearProof).toHaveBeenCalledWith(EXPENSE_ID, {
+      id: 'user-1',
+      role: 'admin',
+      republicId: 'republic-1',
+    });
+  });
+
+  it('retorna 404 quando não há comprovante para remover', async () => {
+    expenseRepoMock.findById.mockResolvedValue(makeExpense());
+
+    const res = await request(app).delete(`/api/expenses/${EXPENSE_ID}/proof`).set(authHeader());
+
+    expect(res.status).toBe(404);
   });
 });

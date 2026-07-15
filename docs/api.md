@@ -44,7 +44,7 @@ Body: `{ currentPassword, newPassword }`.
 ## Residents — `/api/residents`
 
 ### `GET /residents` 🔒 `[admin, resident]`
-Query: `page`, `limit` (padrão 1/10). Lista só moradores (`role: 'resident'`) da república do usuário — o admin nunca aparece na lista.
+Query: `page`, `limit` (padrão 1/10), `search` (busca parcial por `fullName` ou `nickname`). Lista só moradores (`role: 'resident'`) da república do usuário — o admin nunca aparece na lista.
 `200` → `{ success: true, data: Resident[], total }`.
 
 ### `POST /residents` 🔒 `[admin]`
@@ -87,7 +87,19 @@ Body: qualquer subconjunto de `{ description, category, amount, expenseDate, not
 ### `DELETE /expenses/:id`
 `200` → `{ success: true, message: "Despesa removida com sucesso" }`.
 
-**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, proofUrl, createdAt, updatedAt }`. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
+### `POST /expenses/:id/proof`
+Envia (ou substitui) o comprovante da despesa. Body `multipart/form-data` com um único campo `file`, aceitando somente `application/pdf` (limite de 10MB). Se já existir um comprovante, o arquivo antigo é apagado do disco.
+`200` → `{ success: true, data: Expense }` · `400` se o arquivo não for PDF ou estiver ausente · `404` se a despesa não existir (ou for de outra república).
+
+### `GET /expenses/:id/proof`
+Baixa o PDF do comprovante da despesa (mesmas permissões das demais rotas de despesa — qualquer morador/admin da mesma república).
+`200` → arquivo PDF (`Content-Disposition: attachment`) · `404` se a despesa ou o comprovante não existir.
+
+### `DELETE /expenses/:id/proof`
+Remove o comprovante da despesa (apaga o arquivo do disco e limpa os metadados).
+`200` → `{ success: true, data: Expense }` · `404` se não houver comprovante.
+
+**Formato de `Expense`:** `{ id, description, category, amount, expenseDate (YYYY-MM-DD), notes, hasProof, proofOriginalName, createdAt, updatedAt }`. `hasProof` indica se existe um PDF de comprovante salvo no servidor; `proofOriginalName` é o nome original do arquivo enviado (para exibição). O comprovante em si é obtido via `GET /expenses/:id/proof`, não vem embutido na resposta. Categorias válidas: `Moradia`, `Alimentação`, `Transporte`, `Utilidades`, `Limpeza`, `Internet`, `Pets`, `Outros`.
 
 ---
 

@@ -20,7 +20,7 @@ Ambiente completamente containerizado com Docker Compose: backend (porta 3001), 
 
 ### Sprint 1 — Módulo de Despesas — ✅ Concluído
 
-`GET/POST/PUT/DELETE /api/expenses` com filtros dinâmicos via query string: categoria, valor mínimo/máximo, busca por descrição, intervalo de datas. Despesas comuns entram na divisão entre moradores; extras não. Categorias via enum `ExpenseCategory`: Moradia, Alimentação, Transporte, Utilidades, Limpeza, Internet, Pets e Outros. Resultados paginados.
+`GET/POST/PUT/DELETE /api/expenses` com filtros dinâmicos via query string: categoria, valor mínimo/máximo, busca por descrição, intervalo de datas. O comprovante da despesa é um upload real de PDF: `POST/GET/DELETE /api/expenses/:id/proof` sobem, baixam e removem o arquivo, guardado em disco (`backend/uploads/expenses/`) e auditável por qualquer morador/admin da mesma república. Despesas comuns entram na divisão entre moradores; extras não. Categorias via enum `ExpenseCategory`: Moradia, Alimentação, Transporte, Utilidades, Limpeza, Internet, Pets e Outros. Resultados paginados.
 
 ### Sprint 2 — Categorias e Orçamentos — ✅ Concluído (cresceu além do previsto)
 
@@ -56,7 +56,7 @@ Estava listada como pendente na versão anterior desta página — já está pro
 
 Também estava listada como pendente — já está pronta.
 
-- **Moradores** (`GET/POST/PUT /api/residents`) — nickname (único), nome completo, WhatsApp, categoria (`Bixo`, `Agregado` ou `Morador` — só admin altera) e senha (com troca obrigatória no primeiro acesso se gerada automaticamente). **Não há mais exclusão nem desativação de cadastro** — o repository não expõe `delete`, para preservar o histórico de pagamentos. A "saída" de um morador é tratada só no contexto de um mês específico, pelo módulo de fechamento, sem afetar o cadastro global.
+- **Moradores** (`GET/POST/PUT /api/residents`) — nickname (único), nome completo, WhatsApp, categoria (`Bixo`, `Agregado` ou `Morador` — só admin altera) e senha (com troca obrigatória no primeiro acesso se gerada automaticamente). `GET /api/residents?search=` busca por nome completo ou apelido. **Não há mais exclusão nem desativação de cadastro** — o repository não expõe `delete`, para preservar o histórico de pagamentos. A "saída" de um morador é tratada só no contexto de um mês específico, pelo módulo de fechamento, sem afetar o cadastro global.
 - **RBAC** — papéis `admin` e `resident`, aplicados via middleware `authorize(...roles)` em cada rota. Admin gerencia moradores, despesas de terceiros, categorias, orçamentos e lançamentos do fechamento mensal; morador comum só visualiza e edita o próprio cadastro. `usePermissions` espelha essas regras no frontend.
 
 ### Sprints 7–9 — Interface Visual (React) — ✅ Concluído
@@ -65,9 +65,9 @@ Estava listada como a maior parte do trabalho restante — hoje todas as telas p
 
 ### Sprint 10 — Testes, refinamentos e entrega — 🔄 Em andamento
 
-- **Testes automatizados** — 127 testes no backend + 28 no frontend, CI ativo no GitHub Actions rodando typecheck + testes + cobertura + build em push/PR (ver [docs/testes.md](testes.md)).
+- **Testes automatizados** — 135 testes no backend + 31 no frontend, CI ativo no GitHub Actions rodando typecheck + testes + cobertura + build em push/PR (ver [docs/testes.md](testes.md)).
 - **Seed de dados** — `backend/src/database/seed.ts` (`pnpm db:seed`), populando ~3 meses de dados de demonstração (moradores, despesas, pagamentos, saldos, categorias, templates de orçamento) e migrando registros antigos sem os campos de auth/RBAC/categoria.
-- Ainda falta: lint no CI, middleware de erro global e testes das páginas do frontend (ver gaps abaixo) — por isso o status é "em andamento", não "concluído".
+- Ainda falta: lint no CI, middleware de erro global e testes das demais páginas do frontend (ver gaps abaixo) — por isso o status é "em andamento", não "concluído".
 
 ### Extra — fora do planejamento original de 10 sprints
 
@@ -91,7 +91,7 @@ Não existe um middleware de erro central em `createApp.ts`. Erros de validaçã
 
 ### Testes de páginas do frontend
 
-`services/api.ts` e as páginas maiores (`Residents`, `Expenses`, `MonthlyDashboard`, `Budgets`, `Analytics`) ainda não têm testes automatizados — a Fase 3 de testes cobriu hooks, contexto de autenticação e componentes reutilizáveis, mas não as páginas em si (300–500 linhas cada, com bastante estado local).
+`services/api.ts` e as páginas maiores `Expenses`, `MonthlyDashboard`, `Budgets` e `Analytics` ainda não têm testes automatizados; `Residents` já tem cobertura pontual para busca e modo de formulário — a Fase 3 de testes cobriu hooks, contexto de autenticação e componentes reutilizáveis, mas não as páginas em si (300–500 linhas cada, com bastante estado local).
 
 ### Responsável do mês
 

@@ -28,6 +28,10 @@ function generateTempPassword(): string {
   return randomBytes(6).toString('hex');
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 residentRoutes.get(
   '/',
   authMiddleware,
@@ -35,13 +39,18 @@ residentRoutes.get(
   asyncHandler(async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
+    const search = String(req.query.search ?? '').trim();
 
     const user = req.user!;
 
     // Cada admin é dono de UMA república (criada no registro), não de todas —
     // sem esse filtro, contas de repúblicas diferentes vazam dados entre si.
     // role:'resident' exclui o próprio admin — ele não é um morador da caixinha.
-    const result = await residentRepo.findAll({ republicId: user.republicId, role: 'resident' }, page, limit);
+    const result = await residentRepo.findAll({
+      republicId: user.republicId,
+      role: 'resident',
+      ...(search ? { search: escapeRegExp(search) } : {}),
+    }, page, limit);
 
     res.json({ success: true, data: result.data.map(toResidentDTO), total: result.total });
   })

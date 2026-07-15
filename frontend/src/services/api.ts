@@ -129,7 +129,8 @@ export interface Expense {
   category: string;
   amount: number;
   expenseDate: string;
-  proofUrl?: string;
+  hasProof: boolean;
+  proofOriginalName?: string | null;
   notes?: string;
   createdAt: string;
   updatedAt: string;

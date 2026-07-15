@@ -1,6 +1,6 @@
 
- //Página de Despesas - Redesenhada
- 
+//Página de Despesas - Redesenhada
+
 
 import { useState, useEffect } from 'react';
 import api from '../services/api';
@@ -16,7 +16,8 @@ interface Expense {
   amount: number;
   expenseDate: string;
   notes?: string;
-  proofUrl?: string;
+  hasProof: boolean;
+  proofOriginalName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,8 +49,8 @@ export default function Expenses() {
 
   const { canManageExpenses, canManageCategories } = usePermissions(selectedMonth || undefined);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [viewingProof, setViewingProof] = useState<string | null>(null);
-  
+  const [proofFile, setProofFile] = useState<File | null>(null);
+
   const [formData, setFormData] = useState({
     description: '',
     category: '',
@@ -159,6 +160,7 @@ export default function Expenses() {
       amount: expense.amount,
       expenseDate: expense.expenseDate,
     });
+    setProofFile(null);
     setShowEditModal(true);
   };
 
@@ -193,6 +195,51 @@ export default function Expenses() {
     }
   };
 
+  const handleUploadProof = async () => {
+    if (!editingExpenseId || !proofFile) return;
+
+    try {
+      const fd = new FormData();
+      fd.append('file', proofFile);
+      await api.post(`/api/expenses/${editingExpenseId}/proof`, fd, {
+        headers: { 'Content-Type': undefined },
+      });
+      setProofFile(null);
+      await loadData();
+      setSuccess('Comprovante enviado!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao enviar comprovante');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleDeleteProof = async (id: string) => {
+    if (!confirm('Tem certeza que deseja remover o comprovante?')) return;
+
+    try {
+      await api.delete(`/api/expenses/${id}/proof`);
+      await loadData();
+      setSuccess('Comprovante removido!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao remover comprovante');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleViewProof = async (id: string) => {
+    try {
+      const res = await api.get(`/api/expenses/${id}/proof`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao abrir comprovante');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const filteredExpenses = expenses.filter(exp => {
     const expenseMonth = exp.expenseDate.substring(0, 7);
     const categoryMatch = selectedCategory === 'all' || exp.category === selectedCategory;
@@ -201,6 +248,7 @@ export default function Expenses() {
   });
 
   const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const editingExpense = editingExpenseId ? expenses.find(exp => exp.id === editingExpenseId) : undefined;
 
   return (
     <div className="space-y-8">
@@ -325,12 +373,12 @@ export default function Expenses() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center items-center gap-2">
-                        {expense.proofUrl ? (
+                        {expense.hasProof ? (
                           <Button
                             variant="icon"
                             size="sm"
                             icon="👁"
-                            onClick={() => setViewingProof(expense.proofUrl || null)}
+                            onClick={() => handleViewProof(expense.id)}
                             title="Visualizar comprovante"
                           />
                         ) : (
@@ -338,8 +386,8 @@ export default function Expenses() {
                             variant="icon"
                             size="sm"
                             icon="📎"
-                            title="Anexar comprovante (em breve)"
-                            disabled
+                            onClick={() => handleEditExpense(expense)}
+                            title="Anexar comprovante (PDF)"
                           />
                         )}
                         <Button
@@ -422,6 +470,7 @@ export default function Expenses() {
                   onClick={() => {
                     setShowForm(false);
                     setShowEditModal(false);
+                    setProofFile(null);
                   }}
                   fullWidth
                 >
@@ -437,6 +486,44 @@ export default function Expenses() {
                 </Button>
               </div>
             </form>
+
+            {showEditModal && editingExpenseId && (
+              <div className="mt-6 pt-6 border-t-2 border-slate-100">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Comprovante (PDF)</label>
+                {editingExpense?.hasProof ? (
+                  <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-2 border-slate-200 rounded-xl">
+                    <span className="text-slate-700 font-bold truncate">
+                      📄 {editingExpense.proofOriginalName || 'comprovante.pdf'}
+                    </span>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon="✕"
+                      title="Remover comprovante"
+                      onClick={() => handleDeleteProof(editingExpenseId)}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={e => setProofFile(e.target.files?.[0] ?? null)}
+                      className="flex-1 min-w-0 block w-full px-2 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900 font-bold text-sm file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-bold"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      type="button"
+                      onClick={handleUploadProof}
+                      disabled={!proofFile}
+                    >
+                      Enviar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -489,25 +576,6 @@ export default function Expenses() {
         </div>
       )}
 
-      {/* Modal de Visualização de Comprovante */}
-      {viewingProof && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto">
-            <div className="p-6 border-b-2 border-slate-100 flex justify-between items-center sticky top-0 bg-white">
-              <h3 className="text-xl font-black text-slate-900">Comprovante</h3>
-              <button
-                onClick={() => setViewingProof(null)}
-                className="text-slate-400 hover:text-slate-900 text-2xl font-black"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6">
-              <img src={viewingProof} alt="Comprovante" className="w-full rounded-xl" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

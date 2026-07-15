@@ -164,7 +164,6 @@ async function seedDemoData(db: Db, adminId: ObjectId): Promise<void> {
       amount: def.amounts[mi],
       expenseDate: new Date(year, month - 1, 10 + mi),
       notes: undefined,
-      proofUrl: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     }));

@@ -181,7 +181,7 @@ POST   /auth/change-password   🔒
 
 ### Moradores
 ```
-GET    /residents              🔒 Lista moradores (paginado)
+GET    /residents              🔒 Lista moradores (paginado, com ?search= por nome/apelido)
 POST   /residents              🔒 admin — Cria morador
 PUT    /residents/:id          🔒 Atualiza morador (o próprio ou admin)
 ```
@@ -194,6 +194,9 @@ GET    /expenses/:id           🔒 Busca por ID
 POST   /expenses               🔒 Cria despesa
 PUT    /expenses/:id           🔒 Atualiza despesa
 DELETE /expenses/:id           🔒 Remove despesa
+POST   /expenses/:id/proof     🔒 Envia/substitui o comprovante (PDF, multipart/form-data)
+GET    /expenses/:id/proof     🔒 Baixa o comprovante em PDF
+DELETE /expenses/:id/proof     🔒 Remove o comprovante
 ```
 
 ### Categorias
