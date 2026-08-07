@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import { ValueInput } from '../components/ActionButton';
 import Notification from '../components/Notification';
 import { usePermissions } from '../hooks/usePermissions';
+import { proofsEnabled } from '../config/features';
 
 interface Expense {
   id: string;
@@ -371,7 +372,7 @@ export default function Expenses() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center items-center gap-2">
-                        {expense.hasProof ? (
+                        {proofsEnabled && expense.hasProof && (
                           <Button
                             variant="icon"
                             size="sm"
@@ -379,7 +380,8 @@ export default function Expenses() {
                             onClick={() => handleViewProof(expense.id)}
                             title="Visualizar comprovante"
                           />
-                        ) : (
+                        )}
+                        {proofsEnabled && !expense.hasProof && (
                           <Button
                             variant="icon"
                             size="sm"
@@ -485,7 +487,7 @@ export default function Expenses() {
               </div>
             </form>
 
-            {showEditModal && editingExpenseId && (
+            {proofsEnabled && showEditModal && editingExpenseId && (
               <div className="mt-6 pt-6 border-t-2 border-slate-100">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Comprovante (PDF ou imagem)</label>
                 {editingExpense?.hasProof ? (

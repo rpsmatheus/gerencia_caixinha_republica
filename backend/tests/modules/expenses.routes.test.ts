@@ -29,6 +29,7 @@ vi.mock('../../src/shared/middlewares/authMiddleware.js', () => ({
 }));
 
 process.env.PROOF_UPLOAD_DIR = path.resolve(process.cwd(), 'tmp/test-proof-uploads');
+process.env.ENABLE_PROOFS = 'true';
 
 const { createApp } = await import('../../src/app/createApp.js');
 const { PROOF_UPLOAD_DIR } = await import('../../src/shared/middlewares/uploadMiddleware.js');

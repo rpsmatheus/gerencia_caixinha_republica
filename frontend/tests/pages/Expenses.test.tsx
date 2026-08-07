@@ -20,6 +20,10 @@ vi.mock("../../src/services/api", () => ({
   },
 }));
 
+vi.mock("../../src/config/features", () => ({
+  proofsEnabled: true,
+}));
+
 vi.mock("../../src/hooks/usePermissions", () => ({
   usePermissions: () => ({
     canManageExpenses: true,
@@ -29,6 +33,8 @@ vi.mock("../../src/hooks/usePermissions", () => ({
 
 const { default: Expenses } = await import("../../src/pages/Expenses");
 
+const currentMonthExpenseDate = new Date().toISOString().slice(0, 7) + "-10";
+
 const expensesResponse = {
   data: {
     data: [
@@ -37,11 +43,11 @@ const expensesResponse = {
         description: "Conta de luz",
         category: "Utilidades",
         amount: 150,
-        expenseDate: "2026-07-10",
+        expenseDate: currentMonthExpenseDate,
         hasProof: true,
         proofOriginalName: "foto.png",
-        createdAt: "2026-07-10T00:00:00.000Z",
-        updatedAt: "2026-07-10T00:00:00.000Z",
+        createdAt: currentMonthExpenseDate + "T00:00:00.000Z",
+        updatedAt: currentMonthExpenseDate + "T00:00:00.000Z",
       },
     ],
   },

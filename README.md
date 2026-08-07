@@ -12,6 +12,7 @@ Sistema web para gestão financeira de repúblicas estudantis. Automatiza a divi
 - [Como subir o projeto](#como-subir-o-projeto)
 - [Comandos Docker](#comandos-docker)
 - [Rodar sem Docker (modo local)](#rodar-sem-docker-modo-local)
+- [Publicar para uso por link](#publicar-para-uso-por-link)
 - [Rodar os testes](#rodar-os-testes)
 - [Endpoints da API](#endpoints-da-api)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
@@ -136,6 +137,14 @@ pnpm dev
 ```
 
 O backend sobe em `http://localhost:3001` e o frontend em `http://localhost:5173`.
+
+---
+
+## Publicar para uso por link
+
+Para uma pessoa leiga usar, o ideal é publicar o app completo e enviar apenas a URL. O backend agora também consegue servir o frontend compilado em produção, então dá para hospedar tudo como uma aplicação web única com MongoDB gerenciado.
+
+Veja o passo a passo em [docs/publicar-para-leigos.md](docs/publicar-para-leigos.md).
 
 ---
 

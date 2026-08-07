@@ -7,6 +7,8 @@
     "install-all": "cd backend && pnpm install && cd ../frontend && pnpm install",
     "dev": "concurrently \"cd backend && pnpm dev\" \"cd frontend && pnpm dev\"",
     "build": "cd backend && pnpm build && cd ../frontend && pnpm build",
+    "build:production": "cd frontend && pnpm build && cd ../backend && pnpm build",
+    "start": "cd backend && pnpm start",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",

@@ -203,7 +203,7 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: '👥', title: 'Moradores', desc: 'Cadastre quem mora na casa e defina regras proporcionais.' },
-              { icon: '🧾', title: 'Despesas', desc: 'Registre contas fixas e variáveis com comprovantes anexados.' },
+              { icon: '🧾', title: 'Despesas', desc: 'Registre contas fixas e variáveis por categoria.' },
               { icon: '💰', title: 'Caixinha', desc: 'Cálculo instantâneo de quem deve o que no final do mês.' },
               { icon: '📊', title: 'Análises', desc: 'Gráficos interativos para entender onde o dinheiro está indo.' }
             ].map((item, i) => (

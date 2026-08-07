@@ -7,7 +7,21 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_URL = ((import.meta as any).env?.VITE_API_URL) || 'http://localhost:3001';
+function getApiUrl(): string {
+  const configuredUrl = (((import.meta as any).env?.VITE_API_URL) || '').trim();
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (typeof window !== 'undefined') {
+    const isViteDevServer = window.location.hostname === 'localhost' && window.location.port === '5173';
+    return isViteDevServer ? 'http://localhost:3001' : window.location.origin;
+  }
+
+  return 'http://localhost:3001';
+}
+
+const API_URL = getApiUrl();
 
 const TOKEN_KEY = 'caixinha_token';
 

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { asyncHandler } from '../../shared/middlewares/asyncHandler.js';
 import { expenseRepo } from '../../app/appContext.js';
 import { ExpenseFactory } from '../../factories/ExpenseFactory.js';
@@ -11,6 +11,14 @@ import { authorize } from '../../shared/middlewares/authorize.js';
 import { uploadProof, PROOF_UPLOAD_DIR } from '../../shared/middlewares/uploadMiddleware.js';
 
 export const expenseRoutes: Router = Router();
+const proofsEnabled = process.env.ENABLE_PROOFS === 'true';
+
+function proofDisabledResponse(res: Response) {
+  return res.status(403).json({
+    success: false,
+    error: 'Comprovantes estão desativados neste ambiente',
+  });
+}
 
 function toExpenseDTO(expense: IExpense) {
   return {
@@ -177,8 +185,9 @@ expenseRoutes.delete(
   })
 );
 
+
 /**
- * 📌 POST /api/expenses/:id/proof
+ * POST /api/expenses/:id/proof
  * Envia (ou substitui) o comprovante de uma despesa
  */
 expenseRoutes.post(
@@ -186,6 +195,10 @@ expenseRoutes.post(
   authMiddleware,
   authorize('admin', 'resident'),
   (req, res, next) => {
+    if (!proofsEnabled) {
+      return proofDisabledResponse(res);
+    }
+
     uploadProof(req, res, (err: unknown) => {
       if (err) {
         const message = err instanceof Error ? err.message : 'Falha no upload';
@@ -234,7 +247,7 @@ expenseRoutes.post(
 );
 
 /**
- * 📌 GET /api/expenses/:id/proof
+ * GET /api/expenses/:id/proof
  * Baixa o comprovante de uma despesa
  */
 expenseRoutes.get(
@@ -242,6 +255,10 @@ expenseRoutes.get(
   authMiddleware,
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
+    if (!proofsEnabled) {
+      return proofDisabledResponse(res);
+    }
+
     const user = req.user!;
     const expense = await expenseRepo.findById(req.params.id, user);
 
@@ -260,7 +277,7 @@ expenseRoutes.get(
 );
 
 /**
- * 📌 DELETE /api/expenses/:id/proof
+ * DELETE /api/expenses/:id/proof
  * Remove o comprovante de uma despesa
  */
 expenseRoutes.delete(
@@ -268,6 +285,10 @@ expenseRoutes.delete(
   authMiddleware,
   authorize('admin', 'resident'),
   asyncHandler(async (req, res) => {
+    if (!proofsEnabled) {
+      return proofDisabledResponse(res);
+    }
+
     const user = req.user!;
     const expense = await expenseRepo.findById(req.params.id, user);
 
